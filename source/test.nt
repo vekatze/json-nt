@@ -1,0 +1,23 @@
+import {
+  core.control {discard},
+  this.error {report},
+  this.parse {parse-json},
+  static {sample-json},
+  this.show {show-json},
+}
+
+define zen(): unit {
+  match parse-json(*include-text(sample-json)) {
+  | Right(j) =>
+    // printf("{}\n", [%ld(v)])
+    printf("{}\n", [show-json(j)])
+    // print("pass:\n");
+    // discard(j)
+  | Left(e) =>
+    printf("{}\n", [report(e)])
+  }
+}
+
+define main(): unit {
+  zen()
+}

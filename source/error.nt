@@ -1,0 +1,60 @@
+import {
+  core.list {is-empty},
+  core.text {format},
+  core.text.show {show-text},
+  zonk.error {Error},
+  zonk.point {point, show-point},
+  zonk.tag,
+}
+
+data tag {
+| Raw-Text(text)
+| Label(text)
+}
+
+data json-error {
+| JSON-Error(
+    found: text,
+    expected: list(tag),
+    error-location: point,
+  )
+}
+
+define _from-zonk-tag(t: zonk.tag.tag): tag {
+  match t {
+  | zonk.tag.Raw-Text(t') =>
+    Raw-Text(*t')
+  | zonk.tag.Label(t') =>
+    Label(*t')
+  }
+}
+
+define _show-tag(k: tag): text {
+  match k {
+  | Raw-Text(t) =>
+    show-text(t)
+  | Label(t) =>
+    t
+  }
+}
+
+define _from-zonk-error(e: zonk.error.error): json-error {
+  let Error of {found, expected, error-location} = e in
+  JSON-Error of {
+    expected = map(_from-zonk-tag, expected),
+    found,
+    error-location,
+  }
+}
+
+define report(e: json-error): text {
+  let JSON-Error of {found, expected, error-location} = e in
+  let error-location' = show-point(error-location) in
+  let b on expected = is-empty(expected) in
+  if b {
+    format("parse error at {}:\nunexpected:\n  {}", [error-location', found])
+  } else {
+    let expected' = core.text.intercalate(*", ", map(_show-tag, expected)) in
+    format("parse error at {}:\nexpected:\n  {}\nfound:\n  {}", [error-location', expected', found])
+  }
+}

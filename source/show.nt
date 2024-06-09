@@ -1,0 +1,140 @@
+import {
+  core.external {malloc},
+  core.list {for-each, intercalate},
+  core.list.show,
+  core.memory {store-int},
+  core.show {Show, show},
+  core.text {_get-content-pointer, join},
+  core.text.show,
+  core.word,
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, _dict-to-list, json, object},
+  this.error {report},
+  this.parse {parse-json},
+  static {sample-json},
+}
+
+nominal {
+  show-json(j: json): text,
+  _show-json(j: json): list(text),
+}
+
+constant as-show: show(json) {
+  Show of {show = show-json}
+}
+
+constant list-json: show(list(json)) {
+  core.list.show.as-show(as-show)
+}
+
+constant showable-object: show(object(json)) {
+  Show of {
+    show = {
+      function (kvs) {
+        let kvs = _dict-to-list(kvs) in
+        let kvs' =
+          for-each(kvs, function (kv) {
+            let Pair(k, v) = kv in
+            let k' = core.text.show.as-show::show(k) in
+            let v' = show-json(v) in
+            join([k', *": ", v'])
+          })
+        in
+        join(Cons(*"{", append(intercalate(*", ", kvs'), [*"}"])))
+      }
+    },
+  }
+}
+
+define _show-object(kvs: object(json)): list(text) {
+  let kvs = _dict-to-list(kvs) in
+  let kvs' =
+    for-each(kvs, function (kv) {
+      let Pair(k, v) = kv in
+      let k' = core.text.show.as-show::show(k) in
+      let v' = show-json(v) in
+      join([k', *": ", v'])
+    })
+  in
+  Cons(*"{", append(intercalate(*", ", kvs'), [*"}"]))
+}
+
+define _show-array(xs: list(json)): list(text) {
+  Cons(*"{", append(concat(map(_show-json, xs)), [*"}"]))
+}
+
+define _show-json(j: json): list(text) {
+  match j {
+  | Null =>
+    [*"null"]
+  | Bool(b) =>
+    if b {
+      [*"true"]
+    } else {
+      [*"false"]
+    }
+  | Integer(i) =>
+    [core.int.show.as-show::show(i)]
+  | Float(x) =>
+    [core.float.show.as-show::show(x)]
+  | Text(x) =>
+    [core.text.show.as-show::show(x)]
+  | Object(kvs) =>
+    _show-object(kvs)
+  | Array(xs) =>
+    _show-array(xs)
+  }
+}
+
+define show-json(j: json): text {
+  match j {
+  | Null =>
+    *"null"
+  | Bool(b) =>
+    if b {
+      *"true"
+    } else {
+      *"false"
+    }
+  | Integer(i) =>
+    core.int.show.as-show::show(i)
+  | Float(x) =>
+    core.float.show.as-show::show(x)
+  | Text(x) =>
+    core.text.show.as-show::show(x)
+  | Object(kvs) =>
+    showable-object::show(kvs)
+  | Array(xs) =>
+    list-json::show(xs)
+  }
+}
+
+define show-json-2(j: json): text {
+  join(_show-json(j))
+}
+
+foreign {
+  snprintf(pointer, int, pointer): int,
+  sprintf(pointer, pointer): int,
+}
+
+define show-float(x: float64): text {
+  let fmt = _get-content-pointer("%lf\0") in
+  let zero: int = 0 in
+  let size: int = magic external snprintf(zero, zero, fmt)(x: int) in
+  printf("size: {}\n", [%ld(size)]);
+  let ptr = malloc(add-int(size, mul-int(core.word.size, 2))) in
+  store-int(0, ptr);
+  store-int(size, add-int(ptr, core.word.size));
+  let buffer = add-int(ptr, mul-int(core.word.size, 2)) in
+  let _: int = magic external sprintf(buffer, fmt)(x: int) in
+  magic cast(int, text, ptr)
+}
+
+define zen(): unit {
+  match parse-json(*include-text(sample-json)) {
+  | Right(j) =>
+    printf("{}\n", [show-json(j)])
+  | Left(e) =>
+    printf("{}\n", [report(e)])
+  }
+}
