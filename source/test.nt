@@ -1,23 +1,48 @@
 import {
-  core.control {discard},
-  this.error {report},
+  core.text.entity {eq-text},
+  noa.gen.texts {texts},
+  noa.suite {noa},
+  this.data {json},
+  this.gen {jsons},
   this.parse {parse-json},
-  static {sample-json},
   this.show {show-json},
-}
-
-define zen(): unit {
-  match parse-json(*include-text(sample-json)) {
-  | Right(j) =>
-    // printf("{}\n", [%ld(v)])
-    printf("{}\n", [show-json(j)])
-    // print("pass:\n");
-    // discard(j)
-  | Left(e) =>
-    printf("{}\n", [report(e)])
-  }
+  this.text.parse {_parse-json-text},
+  this.text.show {_show-json-text-without-quote},
 }
 
 define main(): unit {
-  zen()
+  noa::check(
+    "∀ (t: text). quote(parse(quote(t))) == quote(t)",
+    texts,
+    function (t: text) {
+      pin t = t in
+      pin t' = _show-json-text-without-quote(t) in
+      match _parse-json-text(t') {
+      | Left(_) =>
+        False
+      | Right(t'') =>
+        pin t'' = t'' in
+        pin t3 = _show-json-text-without-quote(t'') in
+        eq-text(t', t3)
+      }
+    },
+  );
+  noa::check(
+    "∀ (j: json). show(parse(show(j))) == show(j)",
+    jsons,
+    function (j: json) {
+      pin json-txt = show-json(j) in
+      match parse-json(*json-txt) {
+      | Right(j) =>
+        pin new-json-txt = show-json(j) in
+        eq-text(json-txt, new-json-txt)
+      | Left(_) =>
+        False
+      }
+    },
+  )
+}
+
+define zen(): unit {
+  main()
 }

@@ -1,0 +1,81 @@
+import {
+  core.dict {from-list},
+  core.list {for-each},
+  core.random {random-in-range},
+  core.text.loset,
+  noa.gen {Gen, gen},
+  noa.gen.bools {bools},
+  noa.gen.floats {floats},
+  noa.gen.ints {ints},
+  noa.gen.lists {lists},
+  noa.gen.pairs {pairs},
+  noa.gen.texts {texts},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, to-list-ordered},
+  this.show {as-show},
+}
+
+nominal {
+  jsons: gen(json),
+}
+
+define json-lists(): gen(list(json)) {
+  lists(jsons)
+}
+
+define kvs-lists(): gen(list(pair(text, json))) {
+  lists(pairs(texts, jsons))
+}
+
+constant jsons: gen(json) {
+  Gen of {
+    generate = {
+      function (size: int) {
+        let dice = random-in-range(0, 6) in
+        if eq-int(dice, 0) {
+          Null
+        } else-if eq-int(dice, 1) {
+          Bool(bools::generate(size))
+        } else-if eq-int(dice, 2) {
+          Integer(ints::generate(size))
+        } else-if eq-int(dice, 3) {
+          Float(floats::generate(size))
+        } else-if eq-int(dice, 4) {
+          Text(texts::generate(size))
+        } else-if eq-int(dice, 5) {
+          let size = div-int(size, 2) in
+          let trope = kvs-lists() in
+          Object(from-list(core.text.loset.as-loset, trope::generate(size)))
+        } else {
+          let size = div-int(size, 2) in
+          let trope = json-lists() in
+          Array(trope::generate(size))
+        }
+      }
+    },
+    shrink = {
+      function (j: json) {
+        match j {
+        | Null =>
+          []
+        | Bool(b) =>
+          for-each(bools::shrink(b), Bool)
+        | Integer(x) =>
+          for-each(ints::shrink(x), Integer)
+        | Float(x) =>
+          for-each(floats::shrink(x), Float)
+        | Text(x) =>
+          for-each(texts::shrink(x), Text)
+        | Object(kvs) =>
+          let trope = kvs-lists() in
+          for-each(trope::shrink(to-list-ordered(kvs)), function (kvs) {
+            Object(from-list(core.text.loset.as-loset, kvs))
+          })
+        | Array(xs) =>
+          let trope = json-lists() in
+          for-each(trope::shrink(xs), Array)
+        }
+      }
+    },
+    viewer = as-show,
+  }
+}

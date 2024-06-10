@@ -21,23 +21,14 @@ data json {
 | Array(list(json))
 }
 
-define _dict-to-list<k, v>(d: dict(k, v)): list(pair(k, v)) {
+define to-list-ordered<k, v>(d: dict(k, v)): list(pair(k, v)) {
   match d {
   | Tip =>
     []
   | Bin(_, k, v, d1, d2) =>
-    let xs = _dict-to-list(d1) in
-    let ys = _dict-to-list(d2) in
-    Cons(Pair(k, v), append(xs, ys))
-  }
-}
-
-define _dict-size<k, v>(d: &dict(k, v)): int {
-  case d {
-  | Tip =>
-    0
-  | Bin(_, _, _, d1, d2) =>
-    add-int(1, add-int(_dict-size(d1), _dict-size(d2)))
+    let xs = to-list-ordered(d1) in
+    let ys = to-list-ordered(d2) in
+    append(xs, Cons(Pair(k, v), ys))
   }
 }
 

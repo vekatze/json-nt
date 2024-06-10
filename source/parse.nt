@@ -7,6 +7,7 @@ import {
   core.text {join, singleton},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, _textdict, json, object},
   this.error {_from-zonk-error, json-error},
+  this.text.parse {_parse-json-text},
   zonk.parser {
     any-rune,
     choice,
@@ -163,7 +164,14 @@ define _parse-text-inner(): parser(text) {
 define _parse-text(): parser(json) {
   with zonk {
     bind t = _parse-text-inner() in
-    return(Text(t))
+    let unquoted-text-or-none on t = _parse-json-text(t) in
+    let _ = t in
+    match unquoted-text-or-none {
+    | Right(t') =>
+      return(Text(t'))
+    | Left(_) =>
+      fail([Label("JSON string")])
+    }
   }
 }
 
@@ -176,7 +184,14 @@ inline _parse-object-item(kvs: object(json)): parser(object(json)) {
     bind key = _parse-text-inner() in
     bind _ = _token(":") in
     bind value = _parse-json() in
-    return(_textdict::insert(key, value, kvs))
+    let unquoted-key-or-none on key = _parse-json-text(key) in
+    let _ = key in
+    match unquoted-key-or-none {
+    | Right(key') =>
+      return(_textdict::insert(key', value, kvs))
+    | Left(_) =>
+      fail([Label("JSON key")])
+    }
   }
 }
 
