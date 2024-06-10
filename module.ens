@@ -2,7 +2,6 @@
   target {
     test {
       main "test.nt",
-      build-option ["-pg"],
     },
   },
   dependency {
