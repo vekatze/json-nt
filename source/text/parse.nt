@@ -1,93 +1,11 @@
 import {
   core.int.parse {parse-int},
-  core.list {intercalate},
-  core.rune.entity {eq-rune},
-  core.rune.loset {le-rune},
+  core.list {intercalate, try-for-each, try-for-each-N},
   core.text {drop, format, singleton, split-on, take-N},
 }
 
 data error {
 | Error(text)
-}
-
-define _rune-from-int(value: int): ?rune {
-  if le-int(0, value) {
-    if le-int(value, 0x80) {
-      Right(magic cast(int, rune, value))
-    } else-if le-int(value, 0x07ff) {
-      let mask-X = 0b_1100_0000_1000_0000 in
-      let mask-0 = 0b_0000_0111_1100_0000 in
-      let mask-1 = 0b_0000_0000_0011_1111 in
-      let value = trunc-int-int16(value) in
-      let value-0 = and-int16(mask-0, value) in
-      let value-1 = and-int16(mask-1, value) in
-      let value-0' = shl-int16(value-0, 2) in
-      Right(magic cast(int16, rune, or-int16(or-int16(mask-X, value-0'), value-1)))
-    } else-if le-int(value, 0xffff) {
-      let mask-X = 0b_1110_0000_1000_0000_1000_0000 in
-      let mask-0 = 0b_0000_0000_1111_0000_0000_0000 in
-      let mask-1 = 0b_0000_0000_0000_1111_1100_0000 in
-      let mask-2 = 0b_0000_0000_0000_0000_0011_1111 in
-      let value = trunc-int-int24(value) in
-      let value-0 = and-int24(mask-0, value) in
-      let value-1 = and-int24(mask-1, value) in
-      let value-2 = and-int24(mask-2, value) in
-      let value-0' = shl-int24(value-0, 4) in
-      let value-1' = shl-int24(value-1, 2) in
-      Right(magic cast(int24, rune, or-int24(or-int24(or-int24(mask-X, value-0'), value-1'), value-2)))
-    } else-if le-int(value, 0x10ffff) {
-      let mask-X: int32 = 0b_1111_0000_1000_0000_1000_0000_1000_0000 in
-      let mask-0: int32 = 0b_0000_0000_0001_1100_0000_0000_0000_0000 in
-      let mask-1: int32 = 0b_0000_0000_0000_0011_1111_0000_0000_0000 in
-      let mask-2: int32 = 0b_0000_0000_0000_0000_0000_1111_1100_0000 in
-      let mask-3: int32 = 0b_0000_0000_0000_0000_0000_0000_0011_1111 in
-      let value = trunc-int-int32(value) in
-      let value-0 = and-int32(mask-0, value) in
-      let value-1 = and-int32(mask-1, value) in
-      let value-2 = and-int32(mask-2, value) in
-      let value-3 = and-int32(mask-3, value) in
-      let value-0' = shl-int32(value-0, 6) in
-      let value-1' = shl-int32(value-1, 4) in
-      let value-2' = shl-int32(value-2, 2) in
-      Right(magic cast(int32, rune, or-int32(or-int32(or-int32(or-int32(mask-X, value-0'), value-1'), value-2'), value-3)))
-    } else {
-      Left(Unit)
-    }
-  } else {
-    Left(Unit)
-  }
-}
-
-inline _try-for-each<a, e, b>(xs: list(a), f: (a) -> either(e, b)): either(e, list(b)) {
-  let f =
-    define self(xs: list(a)): either(e, list(b)) {
-      match xs {
-      | Nil =>
-        Right(Nil)
-      | Cons(y, ys) =>
-        try z = f(y) in
-        try zs = self(ys) in
-        Right(Cons(z, zs))
-      }
-    }
-  in
-  f(xs)
-}
-
-inline _try-for-each-N<a, e, b>(xs: &list(a), f: (&a) -> either(e, b)): either(e, list(b)) {
-  let f =
-    define self(xs: &list(a)): either(e, list(b)) {
-      case xs {
-      | Nil =>
-        Right(Nil)
-      | Cons(y, ys) =>
-        try z = f(y) in
-        try zs = self(ys) in
-        Right(Cons(z, zs))
-      }
-    }
-  in
-  f(xs)
 }
 
 define _is-hex-digit(r: rune): bool {
@@ -130,7 +48,7 @@ define _unquote-text(t: text): either(error, list(text)) {
         | Left(_) =>
           Left(Error(format("Could not parse `{}` as a hexadecimal integer", [*scalar-value-text])))
         | Right(v) =>
-          match _rune-from-int(v) {
+          match core.rune.from-int(v) {
           | Left(_) =>
             Left(Error(format("The value `{}` is outside of the Unicode codespace", [%ld(v)])))
           | Right(r) =>
@@ -153,14 +71,14 @@ define _parse-json-text-fragment(t: &text): either(error, list(text)) {
     // unreachable
     Left(Error(*"json.text.parse._parse-json-text-fragment"))
   | Cons(t', ts') =>
-    try fragment-lists = _try-for-each(ts', _unquote-text) in
+    try fragment-lists = try-for-each(ts', _unquote-text) in
     Right(Cons(t', concat(fragment-lists)))
   }
 }
 
 define _parse-json-text(t: &text): either(error, text) {
   pin ts = split-on("\\\\", t) in
-  try tss = _try-for-each-N(ts, _parse-json-text-fragment) in
+  try tss = try-for-each-N(ts, _parse-json-text-fragment) in
   Right(core.text.join(core.list.concat(intercalate([*"\\"], tss))))
 }
 

@@ -1,5 +1,4 @@
 import {
-  core.text.entity {eq-text},
   noa.gen.texts {texts},
   noa.suite {noa},
   this.data {json},

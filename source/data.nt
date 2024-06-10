@@ -1,6 +1,5 @@
 import {
-  core.dict {Bin, Tip, dict},
-  core.text.loset,
+  core.dict {dict},
 }
 
 constant _textdict: core.dict.trope(text) {
@@ -21,17 +20,14 @@ data json {
 | Array(list(json))
 }
 
-define to-list-ordered<k, v>(d: dict(k, v)): list(pair(k, v)) {
-  match d {
-  | Tip =>
-    []
-  | Bin(_, k, v, d1, d2) =>
-    let xs = to-list-ordered(d1) in
-    let ys = to-list-ordered(d2) in
-    append(xs, Cons(Pair(k, v), ys))
-  }
+define insert(key: text, value: json, kvs: object(json)): object(json) {
+  _textdict::insert(key, value, kvs)
 }
 
 define lookup(key: &text, kvs: &object(json)): ?&json {
   _textdict::lookup(key, kvs)
+}
+
+define delete(key: text, kvs: object(json)): object(json) {
+  _textdict::delete(key, kvs)
 }

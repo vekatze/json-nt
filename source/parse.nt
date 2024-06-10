@@ -2,8 +2,6 @@ import {
   core.dict,
   core.float.parse {parse-float},
   core.int.parse {parse-int},
-  core.rune.entity {eq-rune},
-  core.rune.loset {le-rune},
   core.text {join, singleton},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, _textdict, json, object},
   this.error {_from-zonk-error, json-error},
@@ -75,12 +73,8 @@ define _any-number(r: rune): bool {
   and(b1, b2)
 }
 
-inline my-any(xs: list(bool)): bool {
-  fold-left(False, xs, or)
-}
-
 define _is-integer-rune(r: rune): bool {
-  my-any([
+  any([
     _any-number(r),
     eq-rune(r, `+`),
     eq-rune(r, `-`),
@@ -88,7 +82,7 @@ define _is-integer-rune(r: rune): bool {
 }
 
 define _is-float-rune(r: rune): bool {
-  my-any([
+  any([
     _any-number(r),
     eq-rune(r, `.`),
     eq-rune(r, `e`),

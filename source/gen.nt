@@ -1,8 +1,6 @@
 import {
-  core.dict {from-list},
-  core.list {for-each},
+  core.dict {from-list, to-list},
   core.random {random-in-range},
-  core.text.loset,
   noa.gen {Gen, gen},
   noa.gen.bools {bools},
   noa.gen.floats {floats},
@@ -10,7 +8,7 @@ import {
   noa.gen.lists {lists},
   noa.gen.pairs {pairs},
   noa.gen.texts {texts},
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, to-list-ordered},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, json},
   this.show {as-show},
 }
 
@@ -67,7 +65,7 @@ constant jsons: gen(json) {
           for-each(texts::shrink(x), Text)
         | Object(kvs) =>
           let trope = kvs-lists() in
-          for-each(trope::shrink(to-list-ordered(kvs)), function (kvs) {
+          for-each(trope::shrink(to-list(kvs)), function (kvs) {
             Object(from-list(core.text.loset.as-loset, kvs))
           })
         | Array(xs) =>

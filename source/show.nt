@@ -1,14 +1,12 @@
 import {
-  core.list {for-each, intercalate},
+  core.dict {to-list},
+  core.list {intercalate},
   core.list.show,
   core.show {Show, show},
   core.text {join},
   core.text.show,
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object, to-list-ordered},
-  this.error {report},
-  this.parse {parse-json},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
   this.text.show {_show-json-text},
-  static {sample-json},
 }
 
 nominal {
@@ -27,7 +25,7 @@ constant showable-object: show(object(json)) {
   Show of {
     show = {
       function (kvs) {
-        let kvs = to-list-ordered(kvs) in
+        let kvs = to-list(kvs) in
         let kvs' =
           for-each(kvs, function (kv) {
             let Pair(k, v) = kv in
@@ -43,7 +41,7 @@ constant showable-object: show(object(json)) {
 }
 
 define _show-object(kvs: object(json)): list(text) {
-  let kvs = to-list-ordered(kvs) in
+  let kvs = to-list(kvs) in
   let kvs' =
     for-each(kvs, function (kv) {
       let Pair(k, v) = kv in
@@ -75,19 +73,5 @@ define show-json(j: json): text {
     showable-object::show(kvs)
   | Array(xs) =>
     list-json::show(xs)
-  }
-}
-
-foreign {
-  snprintf(pointer, int, pointer): int,
-  sprintf(pointer, pointer): int,
-}
-
-define zen(): unit {
-  match parse-json(*include-text(sample-json)) {
-  | Right(j) =>
-    printf("{}\n", [show-json(j)])
-  | Left(e) =>
-    printf("{}\n", [report(e)])
   }
 }
