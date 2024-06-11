@@ -1,5 +1,5 @@
 import {
-  core.int.parse {parse-int},
+  core.int.parse {parse-hex},
   core.list {intercalate, try-for-each, try-for-each-N},
   core.text {drop, format, singleton, split-on, take-N},
 }
@@ -44,7 +44,7 @@ define _unquote-text(t: text): either(error, list(text)) {
       let len on scalar-value-text = core.text.length(scalar-value-text) in
       pin scalar-value-text = scalar-value-text in
       if and(eq-int(len, 4), core.text.all(_is-hex-digit, scalar-value-text)) {
-        match parse-int(scalar-value-text, 16) {
+        match parse-hex(scalar-value-text) {
         | Left(_) =>
           Left(Error(format("Could not parse `{}` as a hexadecimal integer", [*scalar-value-text])))
         | Right(v) =>

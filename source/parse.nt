@@ -101,7 +101,7 @@ inline _parse-number(): parser(json) {
     bind _ = _skip-space in
     let is-integer on num-text = core.text.all(_is-integer-rune, num-text) in
     if is-integer {
-      let num-or-none on num-text = parse-int(num-text, 10) in
+      let num-or-none on num-text = parse-int(num-text) in
       let _ = num-text in
       match num-or-none {
       | Right(num) =>
