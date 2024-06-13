@@ -13,6 +13,7 @@ import {
     drop-while,
     end-of-input,
     fail,
+    optional,
     parser,
     return,
     run,
@@ -131,19 +132,19 @@ define _special-text(r: rune): bool {
 define _parse-text-loop(acc: list(text)): parser(text) {
   with zonk {
     bind piece = take-while(compose(not, _special-text)) in
-    choice(
-      [
-        with zonk {
-          bind _ = chunk("\\") in
-          bind r = any-rune in
-          _parse-text-loop(Cons(singleton(r), Cons(*"\\", Cons(piece, acc))))
-        },
-      ],
+    bind backslash-or-none = optional(chunk("\\")) in
+    match backslash-or-none {
+    | Right(_) =>
+      with zonk {
+        bind r = any-rune in
+        _parse-text-loop(Cons(singleton(r), Cons(*"\\", Cons(piece, acc))))
+      }
+    | Left(_) =>
       with zonk {
         bind _ = _token("\"") in
         return(join(core.list.reverse(Cons(piece, acc))))
-      },
-    )
+      }
+    }
   }
 }
 
@@ -192,15 +193,13 @@ inline _parse-object-item(kvs: object(json)): parser(object(json)) {
 define _parse-object-inner(acc: object(json)): parser(json) {
   with zonk {
     bind acc' = _parse-object-item(acc) in
-    choice(
-      [
-        with zonk {
-          bind _ = _token(",") in
-          _parse-object-inner(acc')
-        },
-      ],
-      return(Object(acc')),
-    )
+    bind comma-or-none = optional(_token(",")) in
+    match comma-or-none {
+    | Right(_) =>
+      _parse-object-inner(acc')
+    | Left(_) =>
+      return(Object(acc'))
+    }
   }
 }
 
@@ -221,15 +220,13 @@ inline _parse-object(): parser(json) {
 define _parse-array-inner(acc: list(json)): parser(json) {
   with zonk {
     bind v = _parse-json() in
-    choice(
-      [
-        with zonk {
-          bind _ = _token(",") in
-          _parse-array-inner(Cons(v, acc))
-        },
-      ],
-      return(Array(reverse(Cons(v, acc)))),
-    )
+    bind comma-or-none = optional(_token(",")) in
+    match comma-or-none {
+    | Right(_) =>
+      _parse-array-inner(Cons(v, acc))
+    | Left(_) =>
+      return(Array(reverse(Cons(v, acc))))
+    }
   }
 }
 

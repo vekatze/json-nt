@@ -1,6 +1,6 @@
 # json-nt
 
-A (currently non-optimized) JSON parser for the [Neut](https://vekatze.github.io/neut/) programming language.
+A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming language.
 
 ## Summary
 
