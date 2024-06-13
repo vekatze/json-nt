@@ -1,5 +1,5 @@
 import {
-  core.dict {to-list},
+  core.dictionary {to-list},
   core.list {intercalate},
   core.list.show,
   core.show {Show, show},

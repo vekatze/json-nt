@@ -1,5 +1,5 @@
 import {
-  core.dict {from-list, to-list},
+  core.dictionary {from-list, to-list},
   core.random {random-in-range},
   noa.gen {Gen, gen},
   noa.gen.bools {bools},
@@ -42,7 +42,7 @@ constant jsons: gen(json) {
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2) in
           let trope = kvs-lists() in
-          Object(from-list(core.text.loset.as-loset, trope::generate(size)))
+          Object(from-list(core.text.ord.as-ord, trope::generate(size)))
         } else {
           let size = div-int(size, 2) in
           let trope = json-lists() in
@@ -66,7 +66,7 @@ constant jsons: gen(json) {
         | Object(kvs) =>
           let trope = kvs-lists() in
           for-each(trope::shrink(to-list(kvs)), function (kvs) {
-            Object(from-list(core.text.loset.as-loset, kvs))
+            Object(from-list(core.text.ord.as-ord, kvs))
           })
         | Array(xs) =>
           let trope = json-lists() in

@@ -1,5 +1,5 @@
 import {
-  core.dict,
+  core.dictionary,
   core.float.parse {parse-float},
   core.int.parse {parse-int},
   core.text {join, singleton},
@@ -24,7 +24,7 @@ import {
 }
 
 define _is-space(r: rune): bool {
-  if core.rune.entity.as-entity::identity(r, ` `) {
+  if eq-rune(r, ` `) {
     True
   } else-if ule-int32(sub-int32(magic cast(rune, int32, r), 0x9), 0x4) {
     True
@@ -209,8 +209,8 @@ inline _parse-object(): parser(json) {
     bind _ = _token("{") in
     bind kvs =
       choice(
-        [_parse-object-inner(core.dict.empty())],
-        return(Object(core.dict.empty())),
+        [_parse-object-inner(core.dictionary.empty())],
+        return(Object(core.dictionary.empty())),
       )
     in
     bind _ = _token("}") in

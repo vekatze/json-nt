@@ -1,13 +1,13 @@
 import {
-  core.dict {dict},
+  core.dictionary {dictionary},
 }
 
-constant _textdict: core.dict.trope(text) {
-  core.dict.from-loset(core.text.loset.as-loset)
+constant _textdict: core.dictionary.trope(text) {
+  core.dictionary.from-ord(core.text.ord.as-ord)
 }
 
 inline object(a): type {
-  dict(text, a)
+  dictionary(text, a)
 }
 
 data json {
