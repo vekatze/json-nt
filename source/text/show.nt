@@ -26,7 +26,7 @@ define _show-hex(x: int32): text {
 define _quote-text(haystack: &text): list(text) {
   let len = text-byte-length(haystack) in
   let f =
-    define loop(pivot: int, cursor: int): list(text) {
+    define !loop(pivot: int, cursor: int): list(text) {
       let index = add-int(pivot, cursor) in
       if ge-int(index, len) {
         [_slice-N(pivot, cursor, haystack)]
@@ -34,7 +34,7 @@ define _quote-text(haystack: &text): list(text) {
         let f =
           function (escaped-text: text) {
             let piece = _slice-N(pivot, cursor, haystack) in
-            let rest = loop(add-int(index, 1), 0) in
+            let rest = !loop(add-int(index, 1), 0) in
             Cons(piece, Cons(escaped-text, rest))
           }
         in
@@ -58,7 +58,7 @@ define _quote-text(haystack: &text): list(text) {
           if ule-int32(r, 0x1f) {
             f(format("\\u00{}", [_show-hex(r)]))
           } else {
-            loop(pivot, add-int(cursor, core.rune.size(_Rune(r))))
+            !loop(pivot, add-int(cursor, core.rune.size(_Rune(r))))
           }
         }
       }
