@@ -41,7 +41,7 @@ define _show-tag(k: tag): text {
 define _from-zonk-error(e: zonk.error.error): json-error {
   let Error of {found, expected, error-location} = e in
   JSON-Error of {
-    expected = map(_from-zonk-tag, expected),
+    expected = for-each(expected, _from-zonk-tag),
     found,
     error-location,
   }
@@ -54,7 +54,7 @@ define report(e: json-error): text {
   if b {
     format("parse error at {}:\nunexpected:\n  {}", [error-location', found])
   } else {
-    let expected' = core.text.intercalate(*", ", map(_show-tag, expected)) in
+    let expected' = core.text.intercalate(for-each(expected, _show-tag), *", ") in
     format("parse error at {}:\nexpected:\n  {}\nfound:\n  {}", [error-location', expected', found])
   }
 }

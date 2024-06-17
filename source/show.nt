@@ -34,7 +34,7 @@ constant showable-object: show(object(json)) {
             join([k', *": ", v'])
           })
         in
-        join(Cons(*"{", append(intercalate(*", ", kvs'), [*"}"])))
+        join(Cons(*"{", append(intercalate(kvs', *", "), [*"}"])))
       }
     },
   }
@@ -50,7 +50,7 @@ define _show-object(kvs: object(json)): list(text) {
       join([k', *": ", v'])
     })
   in
-  Cons(*"{", append(intercalate(*", ", kvs'), [*"}"]))
+  Cons(*"{", append(intercalate(kvs', *", "), [*"}"]))
 }
 
 define show-json(j: json): text {

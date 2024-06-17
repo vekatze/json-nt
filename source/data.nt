@@ -20,14 +20,14 @@ data json {
 | Array(list(json))
 }
 
-define insert(key: text, value: json, kvs: object(json)): object(json) {
-  _textdict::insert(key, value, kvs)
+define insert(kvs: object(json), key: text, value: json): object(json) {
+  _textdict::insert(kvs, key, value)
 }
 
-define lookup(key: &text, kvs: &object(json)): ?&json {
-  _textdict::lookup(key, kvs)
+define lookup(kvs: &object(json), key: &text): ?&json {
+  _textdict::lookup(kvs, key)
 }
 
-define delete(key: text, kvs: object(json)): object(json) {
-  _textdict::delete(key, kvs)
+define delete(kvs: object(json), key: text): object(json) {
+  _textdict::delete(kvs, key)
 }

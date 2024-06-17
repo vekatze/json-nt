@@ -1,7 +1,7 @@
 import {
   core.int.parse {parse-hex},
-  core.list {intercalate, try-for-each, try-for-each-N},
-  core.text {drop, format, singleton, split-on, take-N},
+  core.list {intercalate},
+  core.text {drop, format, singleton, split, take-N},
 }
 
 data error {
@@ -40,10 +40,10 @@ define _unquote-text(t: text): either(error, list(text)) {
     } else-if eq-rune(c, `\\`) {
       Right([*"\u{5c}", rest])
     } else-if eq-rune(c, `u`) {
-      let scalar-value-text on rest = take-N(4, rest) in
+      let scalar-value-text on rest = take-N(rest, 4) in
       let len on scalar-value-text = core.text.length(scalar-value-text) in
       pin scalar-value-text = scalar-value-text in
-      if and(eq-int(len, 4), core.text.all(_is-hex-digit, scalar-value-text)) {
+      if and(eq-int(len, 4), core.text.all(scalar-value-text, _is-hex-digit)) {
         match parse-hex(scalar-value-text) {
         | Left(_) =>
           Left(Error(format("Could not parse `{}` as a hexadecimal integer", [*scalar-value-text])))
@@ -52,7 +52,7 @@ define _unquote-text(t: text): either(error, list(text)) {
           | Left(_) =>
             Left(Error(format("The value `{}` is outside of the Unicode codespace", [%ld(v)])))
           | Right(r) =>
-            let rest' = drop(4, rest) in
+            let rest' = drop(rest, 4) in
             Right([singleton(r), rest'])
           }
         }
@@ -66,7 +66,7 @@ define _unquote-text(t: text): either(error, list(text)) {
 }
 
 define _parse-json-text-fragment(t: &text): either(error, list(text)) {
-  match split-on("\\", t) {
+  match split(t, "\\") {
   | Nil =>
     // unreachable
     Left(Error(*"json.text.parse._parse-json-text-fragment"))
@@ -77,9 +77,9 @@ define _parse-json-text-fragment(t: &text): either(error, list(text)) {
 }
 
 define _parse-json-text(t: &text): either(error, text) {
-  pin ts = split-on("\\\\", t) in
+  pin ts = split(t, "\\\\") in
   try tss = try-for-each-N(ts, _parse-json-text-fragment) in
-  Right(core.text.join(core.list.concat(intercalate([*"\\"], tss))))
+  Right(core.text.join(core.list.concat(intercalate(tss, [*"\\"]))))
 }
 
 define zen(): unit {

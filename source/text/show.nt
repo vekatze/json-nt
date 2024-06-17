@@ -29,11 +29,11 @@ define _quote-text(haystack: &text): list(text) {
     define !loop(pivot: int, cursor: int): list(text) {
       let index = add-int(pivot, cursor) in
       if ge-int(index, len) {
-        [_slice-N(pivot, cursor, haystack)]
+        [_slice-N(haystack, pivot, cursor)]
       } else {
         let f =
           function (escaped-text: text) {
-            let piece = _slice-N(pivot, cursor, haystack) in
+            let piece = _slice-N(haystack, pivot, cursor) in
             let rest = !loop(add-int(index, 1), 0) in
             Cons(piece, Cons(escaped-text, rest))
           }
