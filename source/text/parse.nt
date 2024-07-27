@@ -1,6 +1,7 @@
 import {
   core.int.parse {parse-hex},
   core.list {intercalate},
+  core.rune,
   core.text {drop, format, singleton, split, take-N},
 }
 

@@ -1,7 +1,7 @@
 import {
   core.external {malloc},
   core.memory {store-int},
-  core.rune {_Rune},
+  core.rune,
   core.text {_get-content-pointer, _get-rune, _slice-N, format, join, text-byte-length},
   core.word,
 }
@@ -38,27 +38,27 @@ define _quote-text(haystack: &text): list(text) {
             Cons(piece, Cons(escaped-text, rest))
           }
         in
-        let _Rune(r) = _get-rune(haystack, index) in
+        let r = _get-rune(haystack, index) in
         match r {
-        | 0x8 =>
+        | `\u{8}` =>
           f(*"\\b")
-        | 0x9 =>
+        | `\u{9}` =>
           f(*"\\t")
-        | 0xa =>
+        | `\u{a}` =>
           f(*"\\n")
-        | 0xc =>
+        | `\u{c}` =>
           f(*"\\f")
-        | 0xd =>
+        | `\u{d}` =>
           f(*"\\r")
-        | 0x22 =>
+        | `\u{22}` =>
           f(*"\\\"")
-        | 0x5c =>
+        | `\u{5c}` =>
           f(*"\\\\")
         | _ =>
-          if ule-int32(r, 0x1f) {
-            f(format("\\u00{}", [_show-hex(r)]))
+          if le-rune(r, `\u{1f}`) {
+            f(format("\\u00{}", [_show-hex(magic cast(rune, int32, r))]))
           } else {
-            !loop(pivot, add-int(cursor, core.rune.size(_Rune(r))))
+            !loop(pivot, add-int(cursor, core.rune.size(r)))
           }
         }
       }
