@@ -1,5 +1,5 @@
 import {
-  core.dictionary {dictionary},
+  core.dictionary {Trope, dictionary},
 }
 
 constant _textdict: core.dictionary.trope(text) {
@@ -21,13 +21,16 @@ data json {
 }
 
 define insert(kvs: object(json), key: text, value: json): object(json) {
-  _textdict::insert(kvs, key, value)
+  let Trope of {insert} = _textdict in
+  insert(kvs, key, value)
 }
 
 define lookup(kvs: &object(json), key: &text): ?&json {
-  _textdict::lookup(kvs, key)
+  let Trope of {lookup} = _textdict in
+  lookup(kvs, key)
 }
 
 define delete(kvs: object(json), key: text): object(json) {
-  _textdict::delete(kvs, key)
+  let Trope of {delete} = _textdict in
+  delete(kvs, key)
 }

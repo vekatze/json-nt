@@ -32,21 +32,25 @@ constant jsons: gen(json) {
         if eq-int(dice, 0) {
           Null
         } else-if eq-int(dice, 1) {
-          Bool(bools::generate(size))
+          let Gen of {generate} = bools in
+          Bool(generate(size))
         } else-if eq-int(dice, 2) {
-          Integer(ints::generate(size))
+          let Gen of {generate} = ints in
+          Integer(generate(size))
         } else-if eq-int(dice, 3) {
-          Float(floats::generate(size))
+          let Gen of {generate} = floats in
+          Float(generate(size))
         } else-if eq-int(dice, 4) {
-          Text(texts::generate(size))
+          let Gen of {generate} = texts in
+          Text(generate(size))
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2) in
-          let trope = kvs-lists() in
-          Object(from-list(core.text.ord.as-ord, trope::generate(size)))
+          let Gen of {generate} = kvs-lists() in
+          Object(from-list(core.text.ord.as-ord, generate(size)))
         } else {
           let size = div-int(size, 2) in
-          let trope = json-lists() in
-          Array(trope::generate(size))
+          let Gen of {generate} = json-lists() in
+          Array(generate(size))
         }
       }
     },
@@ -56,21 +60,25 @@ constant jsons: gen(json) {
         | Null =>
           []
         | Bool(b) =>
-          for-each(bools::shrink(b), Bool)
+          let Gen of {shrink} = bools in
+          for-each(shrink(b), Bool)
         | Integer(x) =>
-          for-each(ints::shrink(x), Integer)
+          let Gen of {shrink} = ints in
+          for-each(shrink(x), Integer)
         | Float(x) =>
-          for-each(floats::shrink(x), Float)
+          let Gen of {shrink} = floats in
+          for-each(shrink(x), Float)
         | Text(x) =>
-          for-each(texts::shrink(x), Text)
+          let Gen of {shrink} = texts in
+          for-each(shrink(x), Text)
         | Object(kvs) =>
-          let trope = kvs-lists() in
-          for-each(trope::shrink(to-list(kvs)), function (kvs) {
+          let Gen of {shrink} = kvs-lists() in
+          for-each(shrink(to-list(kvs)), function (kvs) {
             Object(from-list(core.text.ord.as-ord, kvs))
           })
         | Array(xs) =>
-          let trope = json-lists() in
-          for-each(trope::shrink(xs), Array)
+          let Gen of {shrink} = json-lists() in
+          for-each(shrink(xs), Array)
         }
       }
     },

@@ -40,7 +40,8 @@ constant jsons: gen(json) {..}
 import {..}
 
 define main(): unit {
-  noa::check(
+  let Trope of {check} = noa in
+  check(
     "∀ (j: json). show(parse(show(j))) == show(j)",
     jsons,
     function (j: json) {

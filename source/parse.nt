@@ -3,7 +3,7 @@ import {
   core.float.parse {parse-float},
   core.int.parse {parse-int},
   core.text {join, singleton},
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, _textdict, json, object},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, insert, json, object},
   this.error {_from-zonk-error, json-error},
   this.text.parse {_parse-json-text},
   zonk.parser {
@@ -183,7 +183,7 @@ inline _parse-object-item(kvs: object(json)): parser(object(json)) {
     let _ = key in
     match unquoted-key-or-none {
     | Right(key') =>
-      return(_textdict::insert(kvs, key', value))
+      return(insert(kvs, key', value))
     | Left(_) =>
       fail([Label("JSON key")])
     }

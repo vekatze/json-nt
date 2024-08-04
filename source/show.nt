@@ -1,5 +1,7 @@
 import {
   core.dictionary {to-list},
+  core.float.show {show-float},
+  core.int.show {show-int},
   core.list {intercalate},
   core.list.show,
   core.show {Show, show},
@@ -45,7 +47,10 @@ define _show-object(kvs: object(json)): list(text) {
   let kvs' =
     for-each(kvs, function (kv) {
       let Pair(k, v) = kv in
-      let k' = core.text.show.as-show::show(k) in
+      let k' =
+        let Show of {show} = core.text.show.as-show in
+        show(k)
+      in
       let v' = show-json(v) in
       join([k', *": ", v'])
     })
@@ -64,14 +69,16 @@ define show-json(j: json): text {
       *"false"
     }
   | Integer(i) =>
-    core.int.show.as-show::show(i)
+    show-int(i)
   | Float(x) =>
-    core.float.show.as-show::show(x)
+    show-float(x)
   | Text(x) =>
     _show-json-text(x)
   | Object(kvs) =>
-    showable-object::show(kvs)
+    let Show of {show} = showable-object in
+    show(kvs)
   | Array(xs) =>
-    list-json::show(xs)
+    let Show of {show} = list-json in
+    show(xs)
   }
 }

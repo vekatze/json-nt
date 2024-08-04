@@ -1,6 +1,6 @@
 import {
   noa.gen.texts {texts},
-  noa.suite {noa},
+  noa.suite {Trope, noa},
   this.data {json},
   this.gen {jsons},
   this.parse {parse-json},
@@ -10,7 +10,8 @@ import {
 }
 
 define main(): unit {
-  noa::check(
+  let Trope of {check = !check} = noa in
+  !check(
     "∀ (t: text). quote(parse(quote(t))) == quote(t)",
     texts,
     function (t: text) {
@@ -26,7 +27,7 @@ define main(): unit {
       }
     },
   );
-  noa::check(
+  !check(
     "∀ (j: json). show(parse(show(j))) == show(j)",
     jsons,
     function (j: json) {
