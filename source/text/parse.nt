@@ -1,6 +1,7 @@
 import {
   core.int.parse {parse-hex},
-  core.list {intercalate},
+  core.int.show {show-int},
+  core.list {any, concat, intercalate, try-for-each, try-for-each-N},
   core.rune,
   core.text {drop, format, singleton, split, take-N},
 }
@@ -51,7 +52,7 @@ define _unquote-text(t: text): either(error, list(text)) {
         | Right(v) =>
           match core.rune.from-int(v) {
           | Left(_) =>
-            Left(Error(format("The value `{}` is outside of the Unicode codespace", [%ld(v)])))
+            Left(Error(format("The value `{}` is outside of the Unicode codespace", [show-int(v)])))
           | Right(r) =>
             let rest' = drop(rest, 4) in
             Right([singleton(r), rest'])

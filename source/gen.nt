@@ -1,5 +1,6 @@
 import {
   core.dictionary {from-list, to-list},
+  core.list {for-each},
   core.random {random-in-range},
   noa.gen {Gen, gen},
   noa.gen.bools {bools},

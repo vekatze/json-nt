@@ -1,7 +1,9 @@
 import {
   core.dictionary,
   core.float.parse {parse-float},
+  core.function {compose},
   core.int.parse {parse-int},
+  core.list {any, reverse},
   core.text {join, singleton},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, insert, json, object},
   this.error {_from-zonk-error, json-error},

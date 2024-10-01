@@ -2,7 +2,7 @@ import {
   core.dictionary {to-list},
   core.float.show {show-float},
   core.int.show {show-int},
-  core.list {intercalate},
+  core.list {append, for-each, intercalate},
   core.list.show,
   core.show {Show, show},
   core.text {join},

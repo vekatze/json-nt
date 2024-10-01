@@ -1,5 +1,6 @@
 import {
   core.external {malloc},
+  core.list {append},
   core.memory {store-int},
   core.rune,
   core.text {_get-content-pointer, _get-rune, _slice-N, format, join, text-byte-length},
