@@ -1,10 +1,11 @@
 import {
+  core.c-string {to-c-string},
   core.external {malloc},
   core.list {append},
   core.memory {store-int},
   core.pointer {pointer, shift},
   core.rune,
-  core.text {_get-content-pointer, _get-rune, _slice-N, format, join, text-byte-length},
+  core.text {_get-rune, _slice-N, format, join, text-byte-length},
   core.word,
 }
 
@@ -14,7 +15,7 @@ foreign {
 }
 
 define _show-hex(x: int32): text {
-  let fmt = _get-content-pointer("%02x") in
+  pin fmt = to-c-string("%02x") in
   let zero: int = 0 in
   let size: int = magic external snprintf(zero, zero, fmt)(x: int) in
   let ptr = malloc(add-int(size, add-int(1, mul-int(core.word.size, 2)))) in
