@@ -2,6 +2,12 @@
 
 A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming language.
 
+## Installation
+
+```sh
+neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-13.tar.zst
+```
+
 ## Summary
 
 ```neut
