@@ -8,33 +8,30 @@ A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming langua
 neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-13.tar.zst
 ```
 
-## Summary
+## Types
 
 ```neut
-// types
-
-inline object(a): type {
-  dict(text, a)
-}
-
+// Represents a JSON value
 data json {
 | Null
 | Bool(bool)
 | Integer(int)
 | Float(float)
 | Text(text)
-| Object(object(json))
+| Object(dictionary(text, a))
 | Array(list(json))
 }
 
-// functions
+// Parses a string into a JSON value.
+define parse-json(t: text): either(json-error, json)
 
-define parse-json(t: text): either(json-error, json) {..}
+// Converts a JSON value into a text.
+define show-json(j: json): text
 
-define show-json(j: json): text {..}
+// Converts a parse error into a human-readable error message.
+define report(e: json-error): text
 
-// for property-based testing
-
+// For property-based testing
 constant jsons: gen(json) {..}
 ```
 
@@ -43,23 +40,13 @@ constant jsons: gen(json) {..}
 ```neut
 // see source/test.nt
 
-import {..}
-
-define main(): unit {
-  let Trope of {check} = noa in
-  check(
-    "∀ (j: json). show(parse(show(j))) == show(j)",
-    jsons,
-    function (j: json) {
-      pin json-txt = show-json(j) in
-      match parse-json(*json-txt) {
-      | Right(j) =>
-        pin new-json-txt = show-json(j) in
-        eq-text(json-txt, new-json-txt)
-      | Left(_) =>
-        False
-      }
-    },
-  )
+define zen(): unit {
+  let input = " {\"key\" : 1234}" in
+  match parse-json(*input) {
+  | Right(j) =>
+    printf("ok: {}\n", [show-json(j)]) // => ok: {"key": 1234}
+  | Left(_) =>
+    print("unreachable")
+  }
 }
 ```
