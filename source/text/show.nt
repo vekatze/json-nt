@@ -1,28 +1,31 @@
 import {
-  core.c-string {to-c-string},
+  core.c-int {C-Int, c-int, from-c-int},
+  core.c-size {C-Size},
+  core.c-string {c-string, to-c-string},
   core.external {malloc},
   core.list {append},
   core.memory {store-int},
-  core.pointer {pointer, shift},
+  core.pointer {null-pointer, shift},
   core.rune,
   core.text {_get-rune, _slice-N, format, join, text-byte-length},
   core.word,
 }
 
 foreign {
-  snprintf(pointer, int, pointer): int,
-  sprintf(pointer, pointer): int,
+  snprintf(pointer, c-int, pointer): c-int,
+  sprintf(pointer, pointer): c-int,
 }
 
 define _show-hex(x: int32): text {
   pin fmt = to-c-string("%02x") in
-  let zero: int = 0 in
-  let size: int = magic external snprintf(zero, zero, fmt)(x: int) in
-  let ptr = malloc(add-int(size, add-int(1, mul-int(core.word.size, 2)))) in
+  let fmt = magic cast(&c-string, pointer, fmt) in
+  let size = magic external snprintf(null-pointer, C-Int(0), fmt)(x: int32) in
+  let size = from-c-int(size) in
+  let ptr = malloc(C-Size(add-int(size, add-int(1, mul-int(core.word.size, 2))))) in
   store-int(0, ptr);
   store-int(size, shift(ptr, core.word.size));
   let buffer = shift(ptr, mul-int(core.word.size, 2)) in
-  let _: int = magic external sprintf(buffer, fmt)(x: int) in
+  let _ = magic external sprintf(buffer, fmt)(x: int32) in
   magic cast(pointer, text, ptr)
 }
 

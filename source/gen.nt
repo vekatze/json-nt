@@ -1,7 +1,7 @@
 import {
   core.dictionary {from-list, to-list},
   core.list {for-each},
-  core.random {random-in-range},
+  core.random {random-in-range-int},
   noa.gen {Gen, gen},
   noa.gen.bools {bools},
   noa.gen.floats {floats},
@@ -29,7 +29,7 @@ constant jsons: gen(json) {
   Gen of {
     generate = {
       function (size: int) {
-        let dice = random-in-range(0, 6) in
+        let dice = random-in-range-int(0, 6) in
         if eq-int(dice, 0) {
           Null
         } else-if eq-int(dice, 1) {
