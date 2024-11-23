@@ -1,5 +1,5 @@
 import {
-  core.c-int {C-Int, c-int, from-c-int},
+  core.c-int {c-int, from-c-int},
   core.c-size {C-Size},
   core.c-string {c-string, to-c-string},
   core.external {malloc},
@@ -19,7 +19,7 @@ foreign {
 define _show-hex(x: int32): text {
   pin fmt = to-c-string("%02x") in
   let fmt = magic cast(&c-string, pointer, fmt) in
-  let size = magic external snprintf(null-pointer, C-Int(0), fmt)(x: int32) in
+  let size = magic external snprintf(null-pointer, 0, fmt)(x: int32) in
   let size = from-c-int(size) in
   let ptr = malloc(C-Size(add-int(size, add-int(1, mul-int(core.word.size, 2))))) in
   store-int(0, ptr);
