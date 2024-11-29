@@ -36,7 +36,7 @@ define _is-space(r: rune): bool {
   }
 }
 
-constant _skip-space: parser(unit) {
+inline _skip-space: parser(unit) {
   drop-while(_is-space)
 }
 
@@ -173,7 +173,7 @@ define _parse-text(): parser(json) {
 }
 
 nominal {
-  _parse-json(): parser(json),
+  _parse-json<>(): parser(json),
 }
 
 inline _parse-object-item(kvs: object(json)): parser(object(json)) {
@@ -210,8 +210,8 @@ inline _parse-object(): parser(json) {
     bind _ = _token("{") in
     bind kvs =
       choice(
-        [_parse-object-inner(core.dictionary.empty())],
-        return(Object(core.dictionary.empty())),
+        [_parse-object-inner(core.dictionary.empty)],
+        return(Object(core.dictionary.empty)),
       )
     in
     bind _ = _token("}") in

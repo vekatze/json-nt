@@ -15,15 +15,15 @@ nominal {
   show-json(j: json): text,
 }
 
-constant as-show: show(json) {
+inline as-show: show(json) {
   Show of {show = show-json}
 }
 
-constant list-json: show(list(json)) {
+inline list-json: show(list(json)) {
   core.list.show.as-show(as-show)
 }
 
-constant showable-object: show(object(json)) {
+inline showable-object: show(object(json)) {
   Show of {
     show = {
       function (kvs) {

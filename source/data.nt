@@ -2,7 +2,7 @@ import {
   core.dictionary {Trope, dictionary},
 }
 
-constant _textdict: core.dictionary.trope(text) {
+inline _textdict: core.dictionary.trope(text) {
   core.dictionary.from-ord(core.text.ord.as-ord)
 }
 

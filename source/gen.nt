@@ -25,7 +25,7 @@ define kvs-lists(): gen(list(pair(text, json))) {
   lists(pairs(texts, jsons))
 }
 
-constant jsons: gen(json) {
+inline jsons: gen(json) {
   Gen of {
     generate = {
       function (size: int) {
