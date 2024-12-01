@@ -32,7 +32,7 @@ define show-json(j: json): text
 define report(e: json-error): text
 
 // For property-based testing
-constant jsons: gen(json) {..}
+inline jsons: gen(json) {..}
 ```
 
 ## Example
