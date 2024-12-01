@@ -23,7 +23,7 @@ data json {
 }
 
 // Parses a string into a JSON value.
-define parse-json(t: text): either(json-error, json)
+define parse-json(t: text): except(json-error, json)
 
 // Converts a JSON value into a text.
 define show-json(j: json): text
@@ -43,9 +43,9 @@ constant jsons: gen(json) {..}
 define zen(): unit {
   let input = " {\"key\" : 1234}" in
   match parse-json(*input) {
-  | Right(j) =>
+  | OK(j) =>
     printf("ok: {}\n", [show-json(j)]) // => ok: {"key": 1234}
-  | Left(_) =>
+  | Error(_) =>
     print("unreachable")
   }
 }

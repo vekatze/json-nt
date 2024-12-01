@@ -2,7 +2,7 @@ import {
   core.list {for-each, is-empty},
   core.text {format},
   core.text.show {show-text},
-  zonk.error {Error},
+  zonk.error {Parse-Error},
   zonk.point {point, show-point},
   zonk.tag,
 }
@@ -39,7 +39,7 @@ define _show-tag(k: tag): text {
 }
 
 define _from-zonk-error(e: zonk.error.error): json-error {
-  let Error of {found, expected, error-location} = e in
+  let Parse-Error of {found, expected, error-location} = e in
   JSON-Error of {
     expected = for-each(expected, _from-zonk-tag),
     found,

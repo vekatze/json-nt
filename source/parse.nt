@@ -107,18 +107,18 @@ inline _parse-number(): parser(json) {
       let num-or-none on num-text = parse-int(num-text) in
       let _ = num-text in
       match num-or-none {
-      | Right(num) =>
+      | OK(num) =>
         return(Integer(num))
-      | Left(_) =>
+      | Error(_) =>
         fail([Label("number")])
       }
     } else {
       let num-or-none on num-text = parse-float(num-text) in
       let _ = num-text in
       match num-or-none {
-      | Right(num) =>
+      | OK(num) =>
         return(Float(num))
-      | Left(_) =>
+      | Error(_) =>
         fail([Label("number")])
       }
     }
@@ -136,12 +136,12 @@ define _parse-text-loop(acc: list(text)): parser(text) {
     bind piece = take-while(compose(not, _special-text)) in
     bind backslash-or-none = optional(chunk("\\")) in
     match backslash-or-none {
-    | Right(_) =>
+    | OK(_) =>
       with zonk {
         bind r = any-rune in
         _parse-text-loop(Cons(singleton(r), Cons(*"\\", Cons(piece, acc))))
       }
-    | Left(_) =>
+    | Error(_) =>
       with zonk {
         bind _ = _token("\"") in
         return(join(core.list.reverse(Cons(piece, acc))))
@@ -164,9 +164,9 @@ define _parse-text(): parser(json) {
     let unquoted-text-or-none on t = _parse-json-text(t) in
     let _ = t in
     match unquoted-text-or-none {
-    | Right(t') =>
+    | OK(t') =>
       return(Text(t'))
-    | Left(_) =>
+    | Error(_) =>
       fail([Label("JSON string")])
     }
   }
@@ -184,9 +184,9 @@ inline _parse-object-item(kvs: object(json)): parser(object(json)) {
     let unquoted-key-or-none on key = _parse-json-text(key) in
     let _ = key in
     match unquoted-key-or-none {
-    | Right(key') =>
+    | OK(key') =>
       return(insert(kvs, key', value))
-    | Left(_) =>
+    | Error(_) =>
       fail([Label("JSON key")])
     }
   }
@@ -197,9 +197,9 @@ define _parse-object-inner(acc: object(json)): parser(json) {
     bind acc' = _parse-object-item(acc) in
     bind comma-or-none = optional(_token(",")) in
     match comma-or-none {
-    | Right(_) =>
+    | OK(_) =>
       _parse-object-inner(acc')
-    | Left(_) =>
+    | Error(_) =>
       return(Object(acc'))
     }
   }
@@ -224,9 +224,9 @@ define _parse-array-inner(acc: list(json)): parser(json) {
     bind v = _parse-json() in
     bind comma-or-none = optional(_token(",")) in
     match comma-or-none {
-    | Right(_) =>
+    | OK(_) =>
       _parse-array-inner(Cons(v, acc))
-    | Left(_) =>
+    | Error(_) =>
       return(Array(reverse(Cons(v, acc))))
     }
   }
@@ -259,7 +259,7 @@ define _parse-json(): parser(json) {
   )
 }
 
-define parse-json(t: text): either(json-error, json) {
+define parse-json(t: text): except(json-error, json) {
   pin st = new-state(t) in
   let p =
     with zonk {
@@ -270,9 +270,9 @@ define parse-json(t: text): either(json-error, json) {
     }
   in
   match run(p, st) {
-  | Right(v) =>
-    Right(v)
-  | Left(e) =>
-    Left(_from-zonk-error(e))
+  | OK(v) =>
+    OK(v)
+  | Error(e) =>
+    Error(_from-zonk-error(e))
   }
 }
