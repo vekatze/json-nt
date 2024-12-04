@@ -18,9 +18,9 @@ define main(): unit {
       pin t = t in
       pin t' = _show-json-text-without-quote(t) in
       match _parse-json-text(t') {
-      | Error(_) =>
+      | Left(_) =>
         False
-      | OK(t'') =>
+      | Right(t'') =>
         pin t'' = t'' in
         pin t3 = _show-json-text-without-quote(t'') in
         eq-text(t', t3)
@@ -33,10 +33,10 @@ define main(): unit {
     function (j: json) {
       pin json-txt = show-json(j) in
       match parse-json(*json-txt) {
-      | OK(j) =>
+      | Right(j) =>
         pin new-json-txt = show-json(j) in
         eq-text(json-txt, new-json-txt)
-      | Error(_) =>
+      | Left(_) =>
         False
       }
     },
