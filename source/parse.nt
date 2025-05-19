@@ -16,11 +16,11 @@ import {
     end-of-input,
     optional,
     parsed,
+    report-unexpected-input,
     take-while,
     zonk,
   },
   zonk.rule.error {parse-error},
-  zonk.rule.expected-item {_Label},
   zonk.rule.zonk-kit {zonk-kit},
 }
 
@@ -116,8 +116,7 @@ inline _parse-number: zonk(json) {
       | Right(num) =>
         Right(Integer(num))
       | Left(_) =>
-        Left(_Label("number"))
-        // report-unexpected-input("number")
+        report-unexpected-input("number")
       }
     } else {
       let num-or-none on num-text = parse-float(num-text) in
@@ -126,8 +125,7 @@ inline _parse-number: zonk(json) {
       | Right(num) =>
         Right(Float(num))
       | Left(_) =>
-        Left(_Label("number"))
-        // report-unexpected-input("number")
+        report-unexpected-input("number")
       }
     }
   }
@@ -171,8 +169,7 @@ inline _parse-text: zonk(json) {
     | Right(t') =>
       Right(Text(t'))
     | Left(_) =>
-      Left(_Label("JSON string"))
-      // report-unexpected-input("JSON string")
+      report-unexpected-input("JSON string")
     }
   }
 }
@@ -192,8 +189,7 @@ inline _parse-object-item(kvs: object(json)): zonk(object(json)) {
     | Right(key') =>
       Right(insert(kvs, key', value))
     | Left(_) =>
-      Left(_Label("JSON key"))
-      // report-unexpected-input("JSON key")
+      report-unexpected-input("JSON key")
     }
   }
 }

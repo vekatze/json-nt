@@ -46,5 +46,11 @@ define main(): unit {
 }
 
 define zen(): unit {
-  main()
+  pin k = make-zonk-kit(*" {\"key\" : 1234}") in
+  match parse-json(k) {
+  | Right(j) =>
+    printf("ok: {}\n", [show-json(j)])
+  | Left(_) =>
+    print("unreachable")
+  }
 }
