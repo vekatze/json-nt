@@ -16,9 +16,9 @@
       enable-preset true,
     },
     zonk {
-      digest "BEHBVNjenoUvNLvXFk3nCJXKJE8vnLInetpAoDAr800",
+      digest "ki2PGd5GV2vonNni0lG_PafuT8Pn1bnDo_ddPMklPEY",
       mirror [
-        "https://github.com/vekatze/zonk/raw/main/archive/0-1-39.tar.zst",
+        "https://github.com/vekatze/zonk/raw/main/archive/0-1-40.tar.zst",
       ],
     },
     noa {

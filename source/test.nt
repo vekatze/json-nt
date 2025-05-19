@@ -7,6 +7,7 @@ import {
   this.show {show-json},
   this.text.parse {_parse-json-text},
   this.text.show {_show-json-text-without-quote},
+  zonk.move.make-zonk-kit {make-zonk-kit},
 }
 
 define main(): unit {
@@ -32,7 +33,8 @@ define main(): unit {
     jsons,
     function (j: json) {
       pin json-txt = show-json(j) in
-      match parse-json(*json-txt) {
+      pin k = make-zonk-kit(*json-txt) in
+      match parse-json(k) {
       | Right(j) =>
         pin new-json-txt = show-json(j) in
         eq-text(json-txt, new-json-txt)
