@@ -23,13 +23,10 @@ data json {
 }
 
 // Parses a string into a JSON value.
-define parse-json(t: text): either(json-error, json)
+define parse-json(k: &zonk-kit): either(parse-error, json)
 
 // Converts a JSON value into a text.
 define show-json(j: json): text
-
-// Converts a parse error into a human-readable error message.
-define report(e: json-error): text
 
 // For property-based testing
 inline jsons: gen(json) {..}
@@ -41,8 +38,8 @@ inline jsons: gen(json) {..}
 // see source/test.nt
 
 define zen(): unit {
-  let input = " {\"key\" : 1234}" in
-  match parse-json(*input) {
+  pin k = make-zonk-kit(*" {\"key\" : 1234}") in
+  match parse-json(k) {
   | Right(j) =>
     printf("ok: {}\n", [show-json(j)]) // => ok: {"key": 1234}
   | Left(_) =>
