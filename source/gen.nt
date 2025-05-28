@@ -2,30 +2,30 @@ import {
   core.dictionary {from-list, to-list},
   core.list {for-each},
   core.random {random-in-range-int},
-  noa.gen {Gen, gen},
-  noa.gen.bools {bools},
-  noa.gen.floats {floats},
-  noa.gen.ints {ints},
-  noa.gen.lists {lists},
-  noa.gen.pairs {pairs},
-  noa.gen.texts {texts},
+  noa.move.gen.bool {bool-gen},
+  noa.move.gen.float {float-gen},
+  noa.move.gen.int {int-gen},
+  noa.move.gen.list {list-gen},
+  noa.move.gen.pair {pair-gen},
+  noa.move.gen.text {text-gen},
+  noa.rule.gen {Gen, gen},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, json},
   this.show {as-show},
 }
 
 nominal {
-  jsons: gen(json),
+  json-gen: gen(json),
 }
 
-define json-lists(): gen(list(json)) {
-  lists(jsons)
+define json-list-gen(): gen(list(json)) {
+  list-gen(json-gen)
 }
 
-define kvs-lists(): gen(list(pair(text, json))) {
-  lists(pairs(texts, jsons))
+define kvs-list-gen(): gen(list(pair(text, json))) {
+  list-gen(pair-gen(text-gen, json-gen))
 }
 
-inline jsons: gen(json) {
+inline json-gen: gen(json) {
   Gen of {
     generate = {
       function (size: int) {
@@ -33,24 +33,24 @@ inline jsons: gen(json) {
         if eq-int(dice, 0) {
           Null
         } else-if eq-int(dice, 1) {
-          let Gen of {generate} = bools in
+          let Gen of {generate} = bool-gen in
           Bool(generate(size))
         } else-if eq-int(dice, 2) {
-          let Gen of {generate} = ints in
+          let Gen of {generate} = int-gen in
           Integer(generate(size))
         } else-if eq-int(dice, 3) {
-          let Gen of {generate} = floats in
+          let Gen of {generate} = float-gen in
           Float(generate(size))
         } else-if eq-int(dice, 4) {
-          let Gen of {generate} = texts in
+          let Gen of {generate} = text-gen in
           Text(generate(size))
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2) in
-          let Gen of {generate} = kvs-lists() in
+          let Gen of {generate} = kvs-list-gen() in
           Object(from-list(core.text.ord.as-ord, generate(size)))
         } else {
           let size = div-int(size, 2) in
-          let Gen of {generate} = json-lists() in
+          let Gen of {generate} = json-list-gen() in
           Array(generate(size))
         }
       }
@@ -61,24 +61,24 @@ inline jsons: gen(json) {
         | Null =>
           []
         | Bool(b) =>
-          let Gen of {shrink} = bools in
+          let Gen of {shrink} = bool-gen in
           for-each(shrink(b), Bool)
         | Integer(x) =>
-          let Gen of {shrink} = ints in
+          let Gen of {shrink} = int-gen in
           for-each(shrink(x), Integer)
         | Float(x) =>
-          let Gen of {shrink} = floats in
+          let Gen of {shrink} = float-gen in
           for-each(shrink(x), Float)
         | Text(x) =>
-          let Gen of {shrink} = texts in
+          let Gen of {shrink} = text-gen in
           for-each(shrink(x), Text)
         | Object(kvs) =>
-          let Gen of {shrink} = kvs-lists() in
+          let Gen of {shrink} = kvs-list-gen() in
           for-each(shrink(to-list(kvs)), function (kvs) {
             Object(from-list(core.text.ord.as-ord, kvs))
           })
         | Array(xs) =>
-          let Gen of {shrink} = json-lists() in
+          let Gen of {shrink} = json-list-gen() in
           for-each(shrink(xs), Array)
         }
       }

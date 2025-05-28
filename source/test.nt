@@ -1,8 +1,9 @@
 import {
-  noa.gen.texts {texts},
-  noa.suite {Trope, noa},
+  noa.move.check {check},
+  noa.move.gen.text {text-gen},
+  noa.move.make-noa-kit {make-default-noa-kit},
   this.data {json},
-  this.gen {jsons},
+  this.gen {json-gen},
   this.parse {parse-json},
   this.show {show-json},
   this.text.parse {_parse-json-text},
@@ -11,10 +12,11 @@ import {
 }
 
 define main(): unit {
-  let Trope of {check = !check} = noa in
-  !check(
+  pin k = make-default-noa-kit() in
+  check(
+    k,
     "∀ (t: text). quote(parse(quote(t))) == quote(t)",
-    texts,
+    text-gen,
     function (t: text) {
       pin t = t in
       pin t' = _show-json-text-without-quote(t) in
@@ -28,9 +30,10 @@ define main(): unit {
       }
     },
   );
-  !check(
+  check(
+    k,
     "∀ (j: json). show(parse(show(j))) == show(j)",
-    jsons,
+    json-gen,
     function (j: json) {
       pin json-txt = show-json(j) in
       pin k = make-zonk-kit(*json-txt) in
