@@ -1,4 +1,5 @@
 import {
+  core.text.io {print-line},
   noa.move.check {check},
   noa.move.gen.text {text-gen},
   noa.move.make-noa-kit {make-default-noa-kit},
@@ -12,20 +13,20 @@ import {
 }
 
 define main(): unit {
-  pin k = make-default-noa-kit() in
+  pin k = make-default-noa-kit();
   check(
     k,
     "∀ (t: text). quote(parse(quote(t))) == quote(t)",
     text-gen,
     function (t: text) {
-      pin t = t in
-      pin t' = _show-json-text-without-quote(t) in
+      pin t = t;
+      pin t' = _show-json-text-without-quote(t);
       match _parse-json-text(t') {
       | Left(_) =>
         False
       | Right(t'') =>
-        pin t'' = t'' in
-        pin t3 = _show-json-text-without-quote(t'') in
+        pin t'' = t'';
+        pin t3 = _show-json-text-without-quote(t'');
         eq-text(t', t3)
       }
     },
@@ -35,11 +36,11 @@ define main(): unit {
     "∀ (j: json). show(parse(show(j))) == show(j)",
     json-gen,
     function (j: json) {
-      pin json-txt = show-json(j) in
-      pin k = make-zonk-kit(*json-txt) in
+      pin json-txt = show-json(j);
+      pin k = make-zonk-kit(*json-txt);
       match parse-json(k) {
       | Right(j) =>
-        pin new-json-txt = show-json(j) in
+        pin new-json-txt = show-json(j);
         eq-text(json-txt, new-json-txt)
       | Left(_) =>
         False
@@ -49,10 +50,12 @@ define main(): unit {
 }
 
 define zen(): unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}") in
+  pin k = make-zonk-kit(*" {\"key\" : 1234}");
   match parse-json(k) {
   | Right(j) =>
-    printf("ok: {}\n", [show-json(j)])
+    pin j = show-json(j);
+    print("ok: ");
+    print-line(j);
   | Left(_) =>
     print("unreachable")
   }

@@ -1,9 +1,6 @@
 import {
-  core.dictionary {Trope, dictionary},
-}
-
-inline _textdict: core.dictionary.trope(text) {
-  core.dictionary.from-ord(core.text.ord.as-ord)
+  core.dictionary {Bin, Tip, dictionary},
+  core.list {append},
 }
 
 inline object(a): type {
@@ -21,16 +18,38 @@ data json {
 }
 
 define insert(kvs: object(json), key: text, value: json): object(json) {
-  let Trope of {insert} = _textdict in
-  insert(kvs, key, value)
+  pin k = core.text.ord.as-ord;
+  core.dictionary.insert(k, kvs, key, value)
 }
 
-define lookup(kvs: &object(json), key: &text): ?&json {
-  let Trope of {lookup} = _textdict in
-  lookup(kvs, key)
+define lookup(k: &ord(text), kvs: &object(json), key: &text): ?&json {
+  core.dictionary.lookup(k, kvs, key)
 }
 
-define delete(kvs: object(json), key: text): object(json) {
-  let Trope of {delete} = _textdict in
-  delete(kvs, key)
+define delete(k: &ord(text), kvs: object(json), key: text): object(json) {
+  core.dictionary.delete(k, kvs, key)
+}
+
+inline from-list<k, v>(_ord: &ord(k), kvs: list(pair(k, v))): dictionary(k, v) {
+  let f =
+    define self(kvs: list(pair(k, v)), acc: dictionary(k, v)): dictionary(k, v) {
+      match kvs {
+      | Nil =>
+        acc
+      | Cons(Pair(k, v), rest) =>
+        self(rest, core.dictionary.insert(_ord, acc, k, v))
+      }
+    };
+  f(kvs, Tip)
+}
+
+define to-list<k, v>(d: dictionary(k, v)): list(pair(k, v)) {
+  match d {
+  | Tip =>
+    []
+  | Bin(_, k, v, d1, d2) =>
+    let xs = to-list(d1);
+    let ys = to-list(d2);
+    append(xs, Cons(Pair(k, v), ys))
+  }
 }

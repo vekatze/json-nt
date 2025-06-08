@@ -38,10 +38,12 @@ inline jsons: gen(json) {..}
 // see source/test.nt
 
 define zen(): unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}") in
+  pin k = make-zonk-kit(*" {\"key\" : 1234}");
   match parse-json(k) {
   | Right(j) =>
-    printf("ok: {}\n", [show-json(j)]) // => ok: {"key": 1234}
+    pin j = show-json(j);
+    print("ok: ");
+    print-line(j); // => ok: {"key": 1234}
   | Left(_) =>
     print("unreachable")
   }

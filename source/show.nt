@@ -1,5 +1,4 @@
 import {
-  core.dictionary {to-list},
   core.float.show {show-float},
   core.int.show {show-int},
   core.list {append, for-each, intercalate},
@@ -7,7 +6,7 @@ import {
   core.show {Show, show},
   core.text {join},
   core.text.show,
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object, to-list},
   this.text.show {_show-json-text},
 }
 
@@ -16,7 +15,7 @@ nominal {
 }
 
 inline as-show: show(json) {
-  Show of {show = show-json}
+  Show of {show := show-json}
 }
 
 inline list-json: show(list(json)) {
@@ -25,17 +24,16 @@ inline list-json: show(list(json)) {
 
 inline showable-object: show(object(json)) {
   Show of {
-    show = {
+    show := {
       function (kvs) {
-        let kvs = to-list(kvs) in
+        let kvs = to-list(kvs);
         let kvs' =
           for-each(kvs, function (kv) {
-            let Pair(k, v) = kv in
-            let k' = _show-json-text(k) in
-            let v' = show-json(v) in
+            let Pair(k, v) = kv;
+            let k' = _show-json-text(k);
+            let v' = show-json(v);
             join([k', *": ", v'])
-          })
-        in
+          });
         join(Cons(*"{", append(intercalate(kvs', *", "), [*"}"])))
       }
     },
@@ -43,18 +41,17 @@ inline showable-object: show(object(json)) {
 }
 
 define _show-object(kvs: object(json)): list(text) {
-  let kvs = to-list(kvs) in
+  let kvs = to-list(kvs);
   let kvs' =
     for-each(kvs, function (kv) {
-      let Pair(k, v) = kv in
-      let k' =
-        let Show of {show} = core.text.show.as-show in
+      let Pair(k, v) = kv;
+      let k' = {
+        let Show of {show} = core.text.show.as-show;
         show(k)
-      in
-      let v' = show-json(v) in
+      };
+      let v' = show-json(v);
       join([k', *": ", v'])
-    })
-  in
+    });
   Cons(*"{", append(intercalate(kvs', *", "), [*"}"]))
 }
 
@@ -75,10 +72,10 @@ define show-json(j: json): text {
   | Text(x) =>
     _show-json-text(x)
   | Object(kvs) =>
-    let Show of {show} = showable-object in
+    let Show of {show} = showable-object;
     show(kvs)
   | Array(xs) =>
-    let Show of {show} = list-json in
+    let Show of {show} = list-json;
     show(xs)
   }
 }

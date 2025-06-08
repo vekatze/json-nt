@@ -4,6 +4,7 @@ import {
   core.list {any, concat, for-each-E, for-each-EN, intercalate},
   core.rune,
   core.text {drop, format, singleton, split, take-N},
+  core.text.io {print-line},
 }
 
 data error {
@@ -42,9 +43,9 @@ define _unquote-text(t: text): either(error, list(text)) {
     } else-if eq-rune(c, `\\`) {
       Right([*"\u{5c}", rest])
     } else-if eq-rune(c, `u`) {
-      let scalar-value-text on rest = take-N(rest, 4) in
-      let len on scalar-value-text = core.text.length(scalar-value-text) in
-      pin scalar-value-text = scalar-value-text in
+      let scalar-value-text on rest = take-N(rest, 4);
+      let len on scalar-value-text = core.text.length(scalar-value-text);
+      pin scalar-value-text = scalar-value-text;
       if and(eq-int(len, 4), core.text.all(scalar-value-text, _is-hex-digit)) {
         match parse-hex(scalar-value-text) {
         | Left(_) =>
@@ -54,7 +55,7 @@ define _unquote-text(t: text): either(error, list(text)) {
           | Left(_) =>
             Left(JSON-String-Error(format("The value `{}` is outside of the Unicode codespace", [show-int(v)])))
           | Right(r) =>
-            let rest' = drop(rest, 4) in
+            let rest' = drop(rest, 4);
             Right([singleton(r), rest'])
           }
         }
@@ -73,22 +74,26 @@ define _parse-json-text-fragment(t: &text): either(error, list(text)) {
     // unreachable
     Left(JSON-String-Error(*"json.text.parse._parse-json-text-fragment"))
   | Cons(t', ts') =>
-    try fragment-lists = for-each-E(ts', _unquote-text) in
+    try fragment-lists = for-each-E(ts', _unquote-text);
     Right(Cons(t', concat(fragment-lists)))
   }
 }
 
 define _parse-json-text(t: &text): either(error, text) {
-  pin ts = split(t, "\\\\") in
-  try tss = for-each-EN(ts, _parse-json-text-fragment) in
+  pin ts = split(t, "\\\\");
+  try tss = for-each-EN(ts, _parse-json-text-fragment);
   Right(core.text.join(core.list.concat(intercalate(tss, [*"\\"]))))
 }
 
 define zen(): unit {
   match _parse-json-text("hello,\\u12abrld") {
   | Left(JSON-String-Error(e)) =>
-    printf("error: {}\n", [e])
+    pin e = e;
+    print("error: ");
+    print-line(e);
   | Right(t') =>
-    printf("success: {}\n", [t'])
+    pin t' = t';
+    print("success: ");
+    print-line(t');
   }
 }

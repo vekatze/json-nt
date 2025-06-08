@@ -17,34 +17,33 @@ foreign {
 }
 
 define _show-hex(x: int32): text {
-  pin fmt = to-c-string("%02x") in
-  let fmt = magic cast(&c-string, pointer, fmt) in
-  let size = magic external snprintf(null-pointer, 0, fmt)(x: int32) in
-  let size = from-c-int(size) in
-  let ptr = malloc(C-Size(add-int(size, add-int(1, mul-int(core.word.size, 2))))) in
+  pin fmt = to-c-string("%02x");
+  let fmt = magic cast(&c-string, pointer, fmt);
+  let size = magic external snprintf(null-pointer, 0, fmt)(x: int32);
+  let size = from-c-int(size);
+  let ptr = malloc(C-Size(add-int(size, add-int(1, mul-int(core.word.size, 2)))));
   store-int(0, ptr);
   store-int(size, shift(ptr, core.word.size));
-  let buffer = shift(ptr, mul-int(core.word.size, 2)) in
-  let _ = magic external sprintf(buffer, fmt)(x: int32) in
+  let buffer = shift(ptr, mul-int(core.word.size, 2));
+  let _ = magic external sprintf(buffer, fmt)(x: int32);
   magic cast(pointer, text, ptr)
 }
 
 define _quote-text(haystack: &text): list(text) {
-  let len = text-byte-length(haystack) in
+  let len = text-byte-length(haystack);
   let f =
     define !loop(pivot: int, cursor: int): list(text) {
-      let index = add-int(pivot, cursor) in
+      let index = add-int(pivot, cursor);
       if ge-int(index, len) {
         [_slice-N(haystack, pivot, cursor)]
       } else {
         let f =
           function (escaped-text: text) {
-            let piece = _slice-N(haystack, pivot, cursor) in
-            let rest = !loop(add-int(index, 1), 0) in
+            let piece = _slice-N(haystack, pivot, cursor);
+            let rest = !loop(add-int(index, 1), 0);
             Cons(piece, Cons(escaped-text, rest))
-          }
-        in
-        let r = _get-rune(haystack, index) in
+          };
+        let r = _get-rune(haystack, index);
         match r {
         | `\u{8}` =>
           f(*"\\b")
@@ -68,13 +67,12 @@ define _quote-text(haystack: &text): list(text) {
           }
         }
       }
-    }
-  in
+    };
   f(0, 0)
 }
 
 define _show-json-text(t: text): text {
-  pin t = t in
+  pin t = t;
   join(Cons(*"\"", append(_quote-text(t), [*"\""])))
 }
 
