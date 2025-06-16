@@ -9,22 +9,22 @@
   },
   dependency {
     core {
-      digest "8IOw3MKCGiyRg9wZYFcKGdqy13YoDI9qBA504o9NH64",
+      digest "ZSsmC2Kn4zj5-jUVTrVzwa9QYmhfiQarmH9nmPu1tYQ",
       mirror [
-        "https://github.com/vekatze/neut-core/raw/main/archive/0-51-4.tar.zst",
+        "https://github.com/vekatze/neut-core/raw/main/archive/0-51-5.tar.zst",
       ],
       enable-preset true,
     },
     zonk {
-      digest "kJ9XJQT9i8rK7OyDCwCmPaHlDOavB1tBnKYrscsxWZY",
+      digest "TeLEmA_kBrsur_JZUKLJTMOd9LfCNUyxNWr0O-Rz8fw",
       mirror [
-        "https://github.com/vekatze/zonk/raw/main/archive/0-1-44.tar.zst",
+        "https://github.com/vekatze/zonk/raw/main/archive/0-1-45.tar.zst",
       ],
     },
     noa {
-      digest "hK0Wz2TozmVF6_U-OPcg4J7TEeuqIIgDKT2I7FyRoFw",
+      digest "2jWNPNbkIFSDJSAPoewWwp2M0pHO_GEyCxvPSU5huuM",
       mirror [
-        "https://github.com/vekatze/noa/raw/main/archive/0-4-2.tar.zst",
+        "https://github.com/vekatze/noa/raw/main/archive/0-4-3.tar.zst",
       ],
     },
   },
