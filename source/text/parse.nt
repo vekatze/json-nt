@@ -13,7 +13,7 @@ data error {
 
 define _is-hex-digit(r: rune): bool {
   any(
-    [
+    List[
       and(le-rune(`0`, r), le-rune(r, `9`)),
       and(le-rune(`a`, r), le-rune(r, `f`)),
       and(le-rune(`A`, r), le-rune(r, `F`)),
@@ -24,24 +24,24 @@ define _is-hex-digit(r: rune): bool {
 define _unquote-text(t: text): either(error, list(text)) {
   match core.text.uncons(t) {
   | Left(_) =>
-    Right([*"\\"])
+    Right(List[*"\\"])
   | Right(Pair(c, rest)) =>
     if eq-rune(c, `b`) {
-      Right([*"\u{8}", rest])
+      Right(List[*"\u{8}", rest])
     } else-if eq-rune(c, `t`) {
-      Right([*"\u{9}", rest])
+      Right(List[*"\u{9}", rest])
     } else-if eq-rune(c, `n`) {
-      Right([*"\u{a}", rest])
+      Right(List[*"\u{a}", rest])
     } else-if eq-rune(c, `f`) {
-      Right([*"\u{c}", rest])
+      Right(List[*"\u{c}", rest])
     } else-if eq-rune(c, `r`) {
-      Right([*"\u{d}", rest])
+      Right(List[*"\u{d}", rest])
     } else-if eq-rune(c, `"`) {
-      Right([*"\u{22}", rest])
+      Right(List[*"\u{22}", rest])
     } else-if eq-rune(c, `/`) {
-      Right([*"\u{2f}", rest])
+      Right(List[*"\u{2f}", rest])
     } else-if eq-rune(c, `\\`) {
-      Right([*"\u{5c}", rest])
+      Right(List[*"\u{5c}", rest])
     } else-if eq-rune(c, `u`) {
       let scalar-value-text on rest = take-N(rest, 4);
       let len on scalar-value-text = core.text.length(scalar-value-text);
@@ -49,21 +49,21 @@ define _unquote-text(t: text): either(error, list(text)) {
       if and(eq-int(len, 4), core.text.all(scalar-value-text, _is-hex-digit)) {
         match parse-hex(scalar-value-text) {
         | Left(_) =>
-          Left(JSON-String-Error(format("Could not parse `{}` as a hexadecimal integer", [*scalar-value-text])))
+          Left(JSON-String-Error(format("Could not parse `{}` as a hexadecimal integer", List[*scalar-value-text])))
         | Right(v) =>
           match core.rune.from-int(v) {
           | Left(_) =>
-            Left(JSON-String-Error(format("The value `{}` is outside of the Unicode codespace", [show-int(v)])))
+            Left(JSON-String-Error(format("The value `{}` is outside of the Unicode codespace", List[show-int(v)])))
           | Right(r) =>
             let rest' = drop(rest, 4);
-            Right([singleton(r), rest'])
+            Right(List[singleton(r), rest'])
           }
         }
       } else {
-        Left(JSON-String-Error(format("Expected 4-digit Unicode codepoint, but got: {}", [*scalar-value-text])))
+        Left(JSON-String-Error(format("Expected 4-digit Unicode codepoint, but got: {}", List[*scalar-value-text])))
       }
     } else {
-      Left(JSON-String-Error(format("Unknown escape sequence: \\{}", [singleton(c)])))
+      Left(JSON-String-Error(format("Unknown escape sequence: \\{}", List[singleton(c)])))
     }
   }
 }
@@ -82,7 +82,7 @@ define _parse-json-text-fragment(t: &text): either(error, list(text)) {
 define _parse-json-text(t: &text): either(error, text) {
   pin ts = split(t, "\\\\");
   try tss = for-each-EN(ts, _parse-json-text-fragment);
-  Right(core.text.join(core.list.concat(intercalate(tss, [*"\\"]))))
+  Right(core.text.join(core.list.concat(intercalate(tss, List[*"\\"]))))
 }
 
 define zen(): unit {

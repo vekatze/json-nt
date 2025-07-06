@@ -155,7 +155,7 @@ define _parse-text-loop(acc: list(text)): zonk(text) {
 inline _parse-text-inner(): zonk(text) {
   function (k) {
     try _ = chunk("\"")(k);
-    try t = _parse-text-loop([])(k);
+    try t = _parse-text-loop(Nil)(k);
     Right(t)
   }
 }
@@ -239,10 +239,10 @@ inline _parse-array: zonk(json) {
     try vs =
       branch(
         function (k) {
-          _parse-array-inner(k, [])
+          _parse-array-inner(k, List[])
         },
         function (_) {
-          Right(Array([]))
+          Right(Array(List[]))
         },
       )(k);
     try _ = _token("]")(k);

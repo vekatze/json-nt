@@ -32,9 +32,9 @@ inline showable-object: show(object(json)) {
             let Pair(k, v) = kv;
             let k' = _show-json-text(k);
             let v' = show-json(v);
-            join([k', *": ", v'])
+            join(List[k', *": ", v'])
           });
-        join(Cons(*"{", append(intercalate(kvs', *", "), [*"}"])))
+        join(Cons(*"{", append(intercalate(kvs', *", "), List[*"}"])))
       }
     },
   }
@@ -50,9 +50,9 @@ define _show-object(kvs: object(json)): list(text) {
         show(k)
       };
       let v' = show-json(v);
-      join([k', *": ", v'])
+      join(List[k', *": ", v'])
     });
-  Cons(*"{", append(intercalate(kvs', *", "), [*"}"]))
+  Cons(*"{", append(intercalate(kvs', *", "), List[*"}"]))
 }
 
 define show-json(j: json): text {

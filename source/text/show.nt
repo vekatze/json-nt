@@ -35,7 +35,7 @@ define _quote-text(haystack: &text): list(text) {
     define !loop(pivot: int, cursor: int): list(text) {
       let index = add-int(pivot, cursor);
       if ge-int(index, len) {
-        [_slice-N(haystack, pivot, cursor)]
+        List[_slice-N(haystack, pivot, cursor)]
       } else {
         let f =
           function (escaped-text: text) {
@@ -61,7 +61,7 @@ define _quote-text(haystack: &text): list(text) {
           f(*"\\\\")
         | _ =>
           if le-rune(r, `\u{1f}`) {
-            f(format("\\u00{}", [_show-hex(magic cast(rune, int32, r))]))
+            f(format("\\u00{}", List[_show-hex(magic cast(rune, int32, r))]))
           } else {
             !loop(pivot, add-int(cursor, core.rune.size(r)))
           }
@@ -73,7 +73,7 @@ define _quote-text(haystack: &text): list(text) {
 
 define _show-json-text(t: text): text {
   pin t = t;
-  join(Cons(*"\"", append(_quote-text(t), [*"\""])))
+  join(Cons(*"\"", append(_quote-text(t), List[*"\""])))
 }
 
 define _show-json-text-without-quote(t: &text): text {

@@ -59,7 +59,7 @@ inline json-gen: gen(json) {
       function (j: json) {
         match j {
         | Null =>
-          []
+          List[]
         | Bool(b) =>
           let Gen of {shrink} = bool-gen;
           for-each(shrink(b), Bool)
