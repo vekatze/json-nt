@@ -1,15 +1,14 @@
 import {
   core.list {for-each},
   core.random {random-in-range-int},
-  noa.move.gen.bool {bool-gen},
-  noa.move.gen.float {float-gen},
-  noa.move.gen.int {int-gen},
-  noa.move.gen.list {list-gen},
-  noa.move.gen.pair {pair-gen},
-  noa.move.gen.text {text-gen},
-  noa.rule.gen {Gen, gen},
+  noa.gen {Gen, gen},
+  noa.gen.bool {bool-gen},
+  noa.gen.float {float-gen},
+  noa.gen.int {int-gen},
+  noa.gen.list {list-gen},
+  noa.gen.pair {pair-gen},
+  noa.gen.text {text-gen},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, from-list, json, to-list},
-  this.show {as-show},
 }
 
 nominal {
@@ -84,6 +83,5 @@ inline json-gen: gen(json) {
         }
       }
     },
-    viewer := as-show,
   }
 }

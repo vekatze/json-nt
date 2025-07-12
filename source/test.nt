@@ -1,15 +1,15 @@
 import {
   core.text.io {print-line},
-  noa.move.check {check},
-  noa.move.gen.text {text-gen},
-  noa.move.make-noa-kit {make-default-noa-kit},
+  noa.check {check},
+  noa.gen.text {text-gen},
+  noa.make-noa-kit {make-default-noa-kit},
   this.data {json},
   this.gen {json-gen},
   this.parse {parse-json},
   this.show {show-json},
   this.text.parse {_parse-json-text},
   this.text.show {_show-json-text-without-quote},
-  zonk.move.make-zonk-kit {make-zonk-kit},
+  zonk.make-zonk-kit {make-zonk-kit},
 }
 
 define main(): unit {
@@ -41,7 +41,7 @@ define main(): unit {
       match parse-json(k) {
       | Right(j) =>
         pin new-json-txt = show-json(j);
-        eq-text(json-txt, new-json-txt)
+        eq-data(json-txt, new-json-txt)
       | Left(_) =>
         False
       }

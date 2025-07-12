@@ -68,7 +68,7 @@ define show-json(j: json): text {
   | Integer(i) =>
     show-int(i)
   | Float(x) =>
-    show-float(x)
+    show-float(x, 6)
   | Text(x) =>
     _show-json-text(x)
   | Object(kvs) =>

@@ -7,8 +7,9 @@ import {
   core.text {join, singleton},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, insert, json, object},
   this.text.parse {_parse-json-text},
-  zonk.move.make-parse-error {make-parse-error},
-  zonk.move.parse {
+  zonk.error {parse-error},
+  zonk.make-parse-error {make-parse-error},
+  zonk.parse {
     any-rune,
     branch,
     chunk,
@@ -20,8 +21,7 @@ import {
     take-while,
     zonk,
   },
-  zonk.rule.error {parse-error},
-  zonk.rule.zonk-kit {zonk-kit},
+  zonk.zonk-kit {zonk-kit},
 }
 
 define _is-space(r: rune): bool {
