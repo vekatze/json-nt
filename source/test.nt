@@ -14,34 +14,34 @@ import {
 
 define main(): unit {
   pin k = make-default-noa-kit();
-  check(
+  check::(
     k,
     "∀ (t: text). quote(parse(quote(t))) == quote(t)",
     text-gen,
     function (t: text) {
       pin t = t;
-      pin t' = _show-json-text-without-quote(t);
-      match _parse-json-text(t') {
+      pin t-without-quote = _show-json-text-without-quote(t);
+      match _parse-json-text(t-without-quote) {
       | Left(_) =>
         False
-      | Right(t'') =>
-        pin t'' = t'';
-        pin t3 = _show-json-text-without-quote(t'');
-        eq-text(t', t3)
+      | Right(t2) =>
+        pin t2 = t2;
+        pin t3 = _show-json-text-without-quote(t2);
+        eq-text(t-without-quote, t3)
       }
     },
   );
-  check(
+  check::(
     k,
     "∀ (j: json). show(parse(show(j))) == show(j)",
     json-gen,
     function (j: json) {
       pin json-txt = show-json(j);
-      pin k = make-zonk-kit(*json-txt);
+      pin k = make-zonk-kit(*json-txt, Unit);
       match parse-json(k) {
       | Right(j) =>
         pin new-json-txt = show-json(j);
-        eq-data(json-txt, new-json-txt)
+        eq-data::(json-txt, new-json-txt)
       | Left(_) =>
         False
       }
@@ -50,7 +50,7 @@ define main(): unit {
 }
 
 define zen(): unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}");
+  pin k = make-zonk-kit(*" {\"key\" : 1234}", Unit);
   match parse-json(k) {
   | Right(j) =>
     pin j = show-json(j);

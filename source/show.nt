@@ -1,4 +1,5 @@
 import {
+  core.dictionary,
   core.float.show {show-float},
   core.int.show {show-int},
   core.list {append, for-each, intercalate},
@@ -6,12 +7,12 @@ import {
   core.show {Show, show},
   core.text {join},
   core.text.show,
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object, to-list},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
   this.text.show {_show-json-text},
 }
 
 nominal {
-  show-json(j: json): text,
+  define show-json(j: json): text,
 }
 
 inline as-show: show(json) {
@@ -26,33 +27,33 @@ inline showable-object: show(object(json)) {
   Show of {
     show := {
       function (kvs) {
-        let kvs = to-list(kvs);
-        let kvs' =
+        let kvs = core.dictionary.to-list(kvs);
+        let kvs =
           for-each(kvs, function (kv) {
             let Pair(k, v) = kv;
-            let k' = _show-json-text(k);
-            let v' = show-json(v);
-            join(List[k', *": ", v'])
+            let k = _show-json-text(k);
+            let v = show-json(v);
+            join(List[k, *": ", v])
           });
-        join(Cons(*"{", append(intercalate(kvs', *", "), List[*"}"])))
+        join(Cons(*"{", append(intercalate(kvs, *", "), List[*"}"])))
       }
     },
   }
 }
 
 define _show-object(kvs: object(json)): list(text) {
-  let kvs = to-list(kvs);
-  let kvs' =
+  let kvs = core.dictionary.to-list(kvs);
+  let kvs =
     for-each(kvs, function (kv) {
       let Pair(k, v) = kv;
-      let k' = {
+      let k = {
         let Show of {show} = core.text.show.as-show;
         show(k)
       };
-      let v' = show-json(v);
-      join(List[k', *": ", v'])
+      let v = show-json(v);
+      join(List[k, *": ", v])
     });
-  Cons(*"{", append(intercalate(kvs', *", "), List[*"}"]))
+  Cons(*"{", append(intercalate(kvs, *", "), List[*"}"]))
 }
 
 define show-json(j: json): text {

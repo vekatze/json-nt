@@ -34,11 +34,11 @@ define _is-space(r: rune): bool {
   }
 }
 
-inline _skip-space: zonk(unit) {
+inline _skip-space<c>: zonk(c, unit) {
   drop-while(_is-space)
 }
 
-inline _token(t: &text): zonk(unit) {
+inline _token<c>(t: &text): zonk(c, unit) {
   function (k) {
     try _ = chunk(t)(k);
     try _ = _skip-space(k);
@@ -46,14 +46,14 @@ inline _token(t: &text): zonk(unit) {
   }
 }
 
-inline _parse-null: zonk(json) {
+inline _parse-null<c>: zonk(c, json) {
   function (k) {
     try _ = _token("null")(k);
     Right(Null)
   }
 }
 
-inline _parse-bool: zonk(json) {
+inline _parse-bool<c>: zonk(c, json) {
   branch(
     function (k) {
       try _ = _token("true")(k);
@@ -101,7 +101,7 @@ define _is-float-rune(r: rune): bool {
   )
 }
 
-inline _parse-number: zonk(json) {
+inline _parse-number<c>: zonk(c, json) {
   // RFC8259:
   // > This specification allows implementations to set limits on the range
   // > and precision of floats accepted.
@@ -137,7 +137,7 @@ define _special-text(r: rune): bool {
   or(b1, b2)
 }
 
-define _parse-text-loop(acc: list(text)): zonk(text) {
+define _parse-text-loop<c>(acc: list(text)): zonk(c, text) {
   function (k) {
     try piece = take-while(compose(not, _special-text))(k);
     try backslash-or-none = optional(chunk("\\"))(k);
@@ -152,7 +152,7 @@ define _parse-text-loop(acc: list(text)): zonk(text) {
   }
 }
 
-inline _parse-text-inner(): zonk(text) {
+inline _parse-text-inner<c>(): zonk(c, text) {
   function (k) {
     try _ = chunk("\"")(k);
     try t = _parse-text-loop(Nil)(k);
@@ -160,14 +160,14 @@ inline _parse-text-inner(): zonk(text) {
   }
 }
 
-inline _parse-text: zonk(json) {
+inline _parse-text<c>: zonk(c, json) {
   function (k) {
     try t = _parse-text-inner()(k);
     let unquoted-text-or-none on t = _parse-json-text(t);
     let _ = t;
     match unquoted-text-or-none {
-    | Right(t') =>
-      Right(Text(t'))
+    | Right(t) =>
+      Right(Text(t))
     | Left(_) =>
       report-unexpected-input("JSON string")
     }
@@ -175,10 +175,10 @@ inline _parse-text: zonk(json) {
 }
 
 nominal {
-  _parse-json: zonk(json),
+  inline _parse-json<c>: zonk(c, json),
 }
 
-inline _parse-object-item(kvs: object(json)): zonk(object(json)) {
+inline _parse-object-item<c>(kvs: object(json)): zonk(c, object(json)) {
   function (k) {
     try key = _parse-text-inner()(k);
     try _ = _token(":")(k);
@@ -186,26 +186,26 @@ inline _parse-object-item(kvs: object(json)): zonk(object(json)) {
     let unquoted-key-or-none on key = _parse-json-text(key);
     let _ = key;
     match unquoted-key-or-none {
-    | Right(key') =>
-      Right(insert(kvs, key', value))
+    | Right(key) =>
+      Right(insert(kvs, key, value))
     | Left(_) =>
       report-unexpected-input("JSON key")
     }
   }
 }
 
-define _parse-object-inner(k: &zonk-kit, acc: object(json)): parsed(json) {
-  try acc' = _parse-object-item(acc)(k);
+define _parse-object-inner<c>(k: &zonk-kit(c), acc: object(json)): parsed(json) {
+  try acc = _parse-object-item(acc)(k);
   try comma-or-none = optional(_token(","))(k);
   match comma-or-none {
   | Right(_) =>
-    _parse-object-inner(k, acc')
+    _parse-object-inner(k, acc)
   | Left(_) =>
-    Right(Object(acc'))
+    Right(Object(acc))
   }
 }
 
-inline _parse-object: zonk(json) {
+inline _parse-object<c>: zonk(c, json) {
   function (k) {
     try _ = _token("{")(k);
     try kvs =
@@ -222,7 +222,7 @@ inline _parse-object: zonk(json) {
   }
 }
 
-define _parse-array-inner(k: &zonk-kit, acc: list(json)): parsed(json) {
+define _parse-array-inner<c>(k: &zonk-kit(c), acc: list(json)): parsed(json) {
   try v = _parse-json(k);
   try comma-or-none = optional(_token(","))(k);
   match comma-or-none {
@@ -233,7 +233,7 @@ define _parse-array-inner(k: &zonk-kit, acc: list(json)): parsed(json) {
   }
 }
 
-inline _parse-array: zonk(json) {
+inline _parse-array<c>: zonk(c, json) {
   function (k) {
     try _ = _token("[")(k);
     try vs =
@@ -250,7 +250,7 @@ inline _parse-array: zonk(json) {
   }
 }
 
-inline _parse-json: zonk(json) {
+inline _parse-json<c>: zonk(c, json) {
   branch(
     _parse-null,
     branch(
@@ -269,8 +269,8 @@ inline _parse-json: zonk(json) {
   )
 }
 
-define parse-json(k: &zonk-kit): either(parse-error, json) {
-  let p: zonk(json) =
+define parse-json<c>(k: &zonk-kit(c)): either(parse-error, json) {
+  let p: zonk(c, json) =
     function (k) {
       try _ = _skip-space(k);
       try json = _parse-json(k);

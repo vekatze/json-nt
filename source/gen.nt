@@ -1,4 +1,5 @@
 import {
+  core.dictionary,
   core.list {for-each},
   core.random {random-in-range-int},
   noa.gen {Gen, gen},
@@ -8,11 +9,11 @@ import {
   noa.gen.list {list-gen},
   noa.gen.pair {pair-gen},
   noa.gen.text {text-gen},
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, from-list, json, to-list},
+  this.data {Array, Bool, Float, Integer, Null, Object, Text, json},
 }
 
 nominal {
-  json-gen: gen(json),
+  inline json-gen: gen(json),
 }
 
 define json-list-gen(): gen(list(json)) {
@@ -45,8 +46,8 @@ inline json-gen: gen(json) {
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2);
           let Gen of {generate} = kvs-list-gen();
-          pin k = core.text.ord.as-ord;
-          Object(from-list(k, generate(size)))
+          let k = core.text.ord.as-ord;
+          Object(core.dictionary.from-list(k, generate(size)))
         } else {
           let size = div-int(size, 2);
           let Gen of {generate} = json-list-gen();
@@ -73,9 +74,9 @@ inline json-gen: gen(json) {
           for-each(shrink(x), Text)
         | Object(kvs) =>
           let Gen of {shrink} = kvs-list-gen();
-          pin k = core.text.ord.as-ord;
-          for-each(shrink(to-list(kvs)), function (kvs) {
-            Object(from-list(k, kvs))
+          let k = core.text.ord.as-ord;
+          for-each(shrink(core.dictionary.to-list(kvs)), function (kvs) {
+            Object(core.dictionary.from-list(k, kvs))
           })
         | Array(xs) =>
           let Gen of {shrink} = json-list-gen();

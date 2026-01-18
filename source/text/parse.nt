@@ -55,8 +55,8 @@ define _unquote-text(t: text): either(error, list(text)) {
           | Left(_) =>
             Left(JSON-String-Error(format("The value `{}` is outside of the Unicode codespace", List[show-int(v)])))
           | Right(r) =>
-            let rest' = drop(rest, 4);
-            Right(List[singleton(r), rest'])
+            let rest = drop(rest, 4);
+            Right(List[singleton(r), rest])
           }
         }
       } else {
@@ -73,9 +73,9 @@ define _parse-json-text-fragment(t: &text): either(error, list(text)) {
   | Nil =>
     // unreachable
     Left(JSON-String-Error(*"json.text.parse._parse-json-text-fragment"))
-  | Cons(t', ts') =>
-    try fragment-lists = for-each-E(ts', _unquote-text);
-    Right(Cons(t', concat(fragment-lists)))
+  | Cons(t, ts) =>
+    try fragment-lists = for-each-E(ts, _unquote-text);
+    Right(Cons(t, concat(fragment-lists)))
   }
 }
 
@@ -91,9 +91,9 @@ define zen(): unit {
     pin e = e;
     print("error: ");
     print-line(e);
-  | Right(t') =>
-    pin t' = t';
+  | Right(t) =>
+    pin t = t;
     print("success: ");
-    print-line(t');
+    print-line(t);
   }
 }
