@@ -5,7 +5,7 @@ A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming langua
 ## Installation
 
 ```sh
-neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-38.tar.zst
+neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-39.tar.zst
 ```
 
 ## Types
