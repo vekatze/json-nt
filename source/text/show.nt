@@ -32,7 +32,7 @@ define _show-hex(x: int32): text {
 define _quote-text(haystack: &text): list(text) {
   let len = text-byte-length(haystack);
   let f =
-    define !loop(pivot: int, cursor: int): list(text) {
+    define loop(pivot: int, cursor: int): list(text) {
       let index = add-int(pivot, cursor);
       if ge-int(index, len) {
         List[_slice-N(haystack, pivot, cursor)]
@@ -40,7 +40,7 @@ define _quote-text(haystack: &text): list(text) {
         let f =
           function (escaped-text: text) {
             let piece = _slice-N(haystack, pivot, cursor);
-            let rest = !loop(add-int(index, 1), 0);
+            let rest = loop(add-int(index, 1), 0);
             Cons(piece, Cons(escaped-text, rest))
           };
         let r = _get-rune(haystack, index);
@@ -63,7 +63,7 @@ define _quote-text(haystack: &text): list(text) {
           if le-rune(r, `\u{1f}`) {
             f(format("\\u00{}", List[_show-hex(magic cast(rune, int32, r))]))
           } else {
-            !loop(pivot, add-int(cursor, core.rune.size(r)))
+            loop(pivot, add-int(cursor, core.rune.size(r)))
           }
         }
       }

@@ -25,32 +25,32 @@ define kvs-list-gen(): gen(list(pair(text, json))) {
 }
 
 inline json-gen: gen(json) {
-  Gen of {
+  Gen{
     generate := {
       function (size: int) {
         let dice = random-in-range-int(0, 6);
         if eq-int(dice, 0) {
           Null
         } else-if eq-int(dice, 1) {
-          let Gen of {generate} = bool-gen;
+          let Gen{generate} = bool-gen;
           Bool(generate(size))
         } else-if eq-int(dice, 2) {
-          let Gen of {generate} = int-gen;
+          let Gen{generate} = int-gen;
           Integer(generate(size))
         } else-if eq-int(dice, 3) {
-          let Gen of {generate} = float-gen;
+          let Gen{generate} = float-gen;
           Float(generate(size))
         } else-if eq-int(dice, 4) {
-          let Gen of {generate} = text-gen;
+          let Gen{generate} = text-gen;
           Text(generate(size))
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2);
-          let Gen of {generate} = kvs-list-gen();
+          let Gen{generate} = kvs-list-gen();
           let k = core.text.ord.as-ord;
           Object(core.dictionary.from-list(k, generate(size)))
         } else {
           let size = div-int(size, 2);
-          let Gen of {generate} = json-list-gen();
+          let Gen{generate} = json-list-gen();
           Array(generate(size))
         }
       }
@@ -61,25 +61,25 @@ inline json-gen: gen(json) {
         | Null =>
           List[]
         | Bool(b) =>
-          let Gen of {shrink} = bool-gen;
+          let Gen{shrink} = bool-gen;
           for-each(shrink(b), Bool)
         | Integer(x) =>
-          let Gen of {shrink} = int-gen;
+          let Gen{shrink} = int-gen;
           for-each(shrink(x), Integer)
         | Float(x) =>
-          let Gen of {shrink} = float-gen;
+          let Gen{shrink} = float-gen;
           for-each(shrink(x), Float)
         | Text(x) =>
-          let Gen of {shrink} = text-gen;
+          let Gen{shrink} = text-gen;
           for-each(shrink(x), Text)
         | Object(kvs) =>
-          let Gen of {shrink} = kvs-list-gen();
+          let Gen{shrink} = kvs-list-gen();
           let k = core.text.ord.as-ord;
           for-each(shrink(core.dictionary.to-list(kvs)), function (kvs) {
             Object(core.dictionary.from-list(k, kvs))
           })
         | Array(xs) =>
-          let Gen of {shrink} = json-list-gen();
+          let Gen{shrink} = json-list-gen();
           for-each(shrink(xs), Array)
         }
       }

@@ -53,7 +53,7 @@ define _unquote-text(t: text): either(error, list(text)) {
         | Right(v) =>
           match core.rune.from-int(v) {
           | Left(_) =>
-            Left(JSON-String-Error(format("The value `{}` is outside of the Unicode codespace", List[show-int(v)])))
+            Left(JSON-String-Error(format("The value `{}` is outsidethe Unicode codespace", List[show-int(v)])))
           | Right(r) =>
             let rest = drop(rest, 4);
             Right(List[singleton(r), rest])

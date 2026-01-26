@@ -104,7 +104,7 @@ define _is-float-rune(r: rune): bool {
 inline _parse-number<c>: zonk(c, json) {
   // RFC8259:
   // > This specification allows implementations to set limits on the range
-  // > and precision of floats accepted.
+  // > and precisionfloats accepted.
   function (k) {
     try num-text = take-while(_is-float-rune)(k);
     try _ = _skip-space(k);
