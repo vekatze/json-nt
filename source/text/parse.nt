@@ -11,7 +11,7 @@ data error {
 | JSON-String-Error(text)
 }
 
-define _is-hex-digit(r: rune): bool {
+define _is-hex-digit(r: rune) -> bool {
   any(
     List[
       and(le-rune(`0`, r), le-rune(r, `9`)),
@@ -21,7 +21,7 @@ define _is-hex-digit(r: rune): bool {
   )
 }
 
-define _unquote-text(t: text): either(error, list(text)) {
+define _unquote-text(t: text) -> either(error, list(text)) {
   match core.text.uncons(t) {
   | Left(_) =>
     Right(List[*"\\"])
@@ -68,7 +68,7 @@ define _unquote-text(t: text): either(error, list(text)) {
   }
 }
 
-define _parse-json-text-fragment(t: &text): either(error, list(text)) {
+define _parse-json-text-fragment(t: &text) -> either(error, list(text)) {
   match split(t, "\\") {
   | Nil =>
     // unreachable
@@ -79,13 +79,13 @@ define _parse-json-text-fragment(t: &text): either(error, list(text)) {
   }
 }
 
-define _parse-json-text(t: &text): either(error, text) {
+define _parse-json-text(t: &text) -> either(error, text) {
   pin ts = split(t, "\\\\");
   try tss = for-each-EN(ts, _parse-json-text-fragment);
   Right(core.text.join(core.list.concat(intercalate(tss, List[*"\\"]))))
 }
 
-define zen(): unit {
+define zen() -> unit {
   match _parse-json-text("hello,\\u12abrld") {
   | Left(JSON-String-Error(e)) =>
     pin e = e;

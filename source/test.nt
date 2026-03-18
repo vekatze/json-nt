@@ -12,7 +12,7 @@ import {
   zonk.make-zonk-kit {make-zonk-kit},
 }
 
-define main(): unit {
+define main() -> unit {
   pin k = make-default-noa-kit();
   check::(
     k,
@@ -49,7 +49,7 @@ define main(): unit {
   )
 }
 
-define zen(): unit {
+define zen() -> unit {
   pin k = make-zonk-kit(*" {\"key\" : 1234}", Unit);
   match parse-json(k) {
   | Right(j) =>

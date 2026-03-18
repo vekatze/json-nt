@@ -13,18 +13,18 @@ import {
 }
 
 nominal {
-  inline json-gen: gen(json),
+  constant json-gen: gen(json),
 }
 
-define json-list-gen(): gen(list(json)) {
+define json-list-gen() -> gen(list(json)) {
   list-gen(json-gen)
 }
 
-define kvs-list-gen(): gen(list(pair(text, json))) {
+define kvs-list-gen() -> gen(list(pair(text, json))) {
   list-gen(pair-gen(text-gen, json-gen))
 }
 
-inline json-gen: gen(json) {
+constant json-gen: gen(json) {
   Gen{
     generate := {
       function (size: int) {

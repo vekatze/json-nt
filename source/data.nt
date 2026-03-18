@@ -16,15 +16,15 @@ data json {
 | Array(list(json))
 }
 
-define insert(kvs: object(json), key: text, value: json): object(json) {
+define insert(kvs: object(json), key: text, value: json) -> object(json) {
   let k = core.text.ord.as-ord;
   core.dictionary.make-insert(k)(kvs, key, value)
 }
 
-define lookup(kvs: &object(json), key: &text): ?&json {
+define lookup(kvs: &object(json), key: &text) -> ?&json {
   core.dictionary.make-lookup(core.text.ord.as-ord)(kvs, key)
 }
 
-define delete(k: &ord(text), kvs: object(json), key: text): object(json) {
+define delete(k: &ord(text), kvs: object(json), key: text) -> object(json) {
   core.dictionary.delete(k, kvs, key)
 }

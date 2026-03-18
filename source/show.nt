@@ -12,18 +12,18 @@ import {
 }
 
 nominal {
-  define show-json(j: json): text,
+  define show-json(j: json) -> text,
 }
 
-inline as-show: show(json) {
+constant as-show: show(json) {
   Show{show := show-json}
 }
 
-inline list-json: show(list(json)) {
+constant list-json: show(list(json)) {
   core.list.show.as-show(as-show)
 }
 
-inline showable-object: show(object(json)) {
+constant showable-object: show(object(json)) {
   Show{
     show := {
       function (kvs) {
@@ -41,7 +41,7 @@ inline showable-object: show(object(json)) {
   }
 }
 
-define _show-object(kvs: object(json)): list(text) {
+define _show-object(kvs: object(json)) -> list(text) {
   let kvs = core.dictionary.to-list(kvs);
   let kvs =
     for-each(kvs, function (kv) {
@@ -56,7 +56,7 @@ define _show-object(kvs: object(json)): list(text) {
   Cons(*"{", append(intercalate(kvs, *", "), List[*"}"]))
 }
 
-define show-json(j: json): text {
+define show-json(j: json) -> text {
   match j {
   | Null =>
     *"null"

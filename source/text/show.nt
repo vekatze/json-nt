@@ -16,7 +16,7 @@ foreign {
   sprintf(pointer, pointer): c-int,
 }
 
-define _show-hex(x: int32): text {
+define _show-hex(x: int32) -> text {
   pin fmt = to-c-string("%02x");
   let fmt = magic cast(&c-string, pointer, fmt);
   let size = magic external snprintf(null-pointer, 0, fmt)(x: int32);
@@ -29,10 +29,10 @@ define _show-hex(x: int32): text {
   magic cast(pointer, text, ptr)
 }
 
-define _quote-text(haystack: &text): list(text) {
+define _quote-text(haystack: &text) -> list(text) {
   let len = text-byte-length(haystack);
   let f =
-    define loop(pivot: int, cursor: int): list(text) {
+    define loop(pivot: int, cursor: int) -> list(text) {
       let index = add-int(pivot, cursor);
       if ge-int(index, len) {
         List[_slice-N(haystack, pivot, cursor)]
@@ -71,11 +71,11 @@ define _quote-text(haystack: &text): list(text) {
   f(0, 0)
 }
 
-define _show-json-text(t: text): text {
+define _show-json-text(t: text) -> text {
   pin t = t;
   join(Cons(*"\"", append(_quote-text(t), List[*"\""])))
 }
 
-define _show-json-text-without-quote(t: &text): text {
+define _show-json-text-without-quote(t: &text) -> text {
   join(_quote-text(t))
 }
