@@ -38,7 +38,7 @@ define _quote-text(haystack: &text) -> list(text) {
         List[_slice-N(haystack, pivot, cursor)]
       } else {
         let f =
-          function (escaped-text: text) {
+          (escaped-text: text) => {
             let piece = _slice-N(haystack, pivot, cursor);
             let rest = loop(add-int(index, 1), 0);
             Cons(piece, Cons(escaped-text, rest))

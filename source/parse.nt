@@ -39,7 +39,7 @@ constant _skip-space<c>: zonk(c, unit) {
 }
 
 inline _token<c>(t: &text) -> zonk(c, unit) {
-  function (k) {
+  (k) => {
     try _ = chunk(t)(k);
     try _ = _skip-space(k);
     Right(Unit)
@@ -47,7 +47,7 @@ inline _token<c>(t: &text) -> zonk(c, unit) {
 }
 
 constant _parse-null<c>: zonk(c, json) {
-  function (k) {
+  (k) => {
     try _ = _token("null")(k);
     Right(Null)
   }
@@ -55,11 +55,11 @@ constant _parse-null<c>: zonk(c, json) {
 
 constant _parse-bool<c>: zonk(c, json) {
   branch(
-    function (k) {
+    (k) => {
       try _ = _token("true")(k);
       Right(Bool(True))
     },
-    function (k) {
+    (k) => {
       try _ = _token("false")(k);
       Right(Bool(False))
     },
@@ -105,7 +105,7 @@ constant _parse-number<c>: zonk(c, json) {
   // RFC8259:
   // > This specification allows implementations to set limits on the range
   // > and precisionfloats accepted.
-  function (k) {
+  (k) => {
     try num-text = take-while(_is-float-rune)(k);
     try _ = _skip-space(k);
     let is-integer on num-text = core.text.all(num-text, _is-integer-rune);
@@ -138,7 +138,7 @@ define _special-text(r: rune) -> bool {
 }
 
 define _parse-text-loop<c>(acc: list(text)) -> zonk(c, text) {
-  function (k) {
+  (k) => {
     try piece = take-while(compose(not, _special-text))(k);
     try backslash-or-none = optional(chunk("\\"))(k);
     match backslash-or-none {
@@ -153,7 +153,7 @@ define _parse-text-loop<c>(acc: list(text)) -> zonk(c, text) {
 }
 
 inline _parse-text-inner<c>() -> zonk(c, text) {
-  function (k) {
+  (k) => {
     try _ = chunk("\"")(k);
     try t = _parse-text-loop(Nil)(k);
     Right(t)
@@ -161,7 +161,7 @@ inline _parse-text-inner<c>() -> zonk(c, text) {
 }
 
 constant _parse-text<c>: zonk(c, json) {
-  function (k) {
+  (k) => {
     try t = _parse-text-inner()(k);
     let unquoted-text-or-none on t = _parse-json-text(t);
     let _ = t;
@@ -179,7 +179,7 @@ nominal {
 }
 
 inline _parse-object-item<c>(kvs: object(json)) -> zonk(c, object(json)) {
-  function (k) {
+  (k) => {
     try key = _parse-text-inner()(k);
     try _ = _token(":")(k);
     try value = _parse-json(k);
@@ -206,14 +206,14 @@ define _parse-object-inner<c>(k: &zonk-kit(c), acc: object(json)) -> parsed(json
 }
 
 constant _parse-object<c>: zonk(c, json) {
-  function (k) {
+  (k) => {
     try _ = _token("{")(k);
     try kvs =
       branch(
-        function (k) {
+        (k) => {
           _parse-object-inner(k, core.dictionary.empty)
         },
-        function (_) {
+        (_) => {
           Right(Object(core.dictionary.empty))
         },
       )(k);
@@ -234,14 +234,14 @@ define _parse-array-inner<c>(k: &zonk-kit(c), acc: list(json)) -> parsed(json) {
 }
 
 constant _parse-array<c>: zonk(c, json) {
-  function (k) {
+  (k) => {
     try _ = _token("[")(k);
     try vs =
       branch(
-        function (k) {
+        (k) => {
           _parse-array-inner(k, List[])
         },
-        function (_) {
+        (_) => {
           Right(Array(List[]))
         },
       )(k);
@@ -271,7 +271,7 @@ constant _parse-json<c>: zonk(c, json) {
 
 define parse-json<c>(k: &zonk-kit(c)) -> either(parse-error, json) {
   let p: zonk(c, json) =
-    function (k) {
+    (k) => {
       try _ = _skip-space(k);
       try json = _parse-json(k);
       try _ = end-of-input(k);
