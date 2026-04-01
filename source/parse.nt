@@ -4,9 +4,9 @@ import {
   core.function {compose},
   core.int.parse {parse-int},
   core.list {reverse},
-  core.text {join, singleton},
+  core.string {join, singleton},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, insert, json, object},
-  this.text.parse {_parse-json-text},
+  this.string.parse {_parse-json-string},
   zonk.error {parse-error},
   zonk.make-parse-error {make-parse-error},
   zonk.parse {
@@ -38,7 +38,7 @@ constant _skip-space<c>: zonk(c, unit) {
   drop-while(_is-space)
 }
 
-inline _token<c>(t: &text) -> zonk(c, unit) {
+inline _token<c>(t: &string) -> zonk(c, unit) {
   (k) => {
     try _ = chunk(t)(k);
     try _ = _skip-space(k);
@@ -106,12 +106,12 @@ constant _parse-number<c>: zonk(c, json) {
   // > This specification allows implementations to set limits on the range
   // > and precisionfloats accepted.
   (k) => {
-    try num-text = take-while(_is-float-rune)(k);
+    try num-string = take-while(_is-float-rune)(k);
     try _ = _skip-space(k);
-    let is-integer on num-text = core.text.all(num-text, _is-integer-rune);
+    let is-integer on num-string = core.string.all(num-string, _is-integer-rune);
     if is-integer {
-      let num-or-none on num-text = parse-int(num-text);
-      let _ = num-text;
+      let num-or-none on num-string = parse-int(num-string);
+      let _ = num-string;
       match num-or-none {
       | Right(num) =>
         Right(Integer(num))
@@ -119,8 +119,8 @@ constant _parse-number<c>: zonk(c, json) {
         report-unexpected-input("number")
       }
     } else {
-      let num-or-none on num-text = parse-float(num-text);
-      let _ = num-text;
+      let num-or-none on num-string = parse-float(num-string);
+      let _ = num-string;
       match num-or-none {
       | Right(num) =>
         Right(Float(num))
@@ -131,20 +131,20 @@ constant _parse-number<c>: zonk(c, json) {
   }
 }
 
-define _special-text(r: rune) -> bool {
+define _special-string(r: rune) -> bool {
   let b1 = eq-rune(r, `"`);
   let b2 = eq-rune(r, `\\`);
   or(b1, b2)
 }
 
-define _parse-text-loop<c>(acc: list(text)) -> zonk(c, text) {
+define _parse-string-loop<c>(acc: list(string)) -> zonk(c, string) {
   (k) => {
-    try piece = take-while(compose(not, _special-text))(k);
+    try piece = take-while(compose(not, _special-string))(k);
     try backslash-or-none = optional(chunk("\\"))(k);
     match backslash-or-none {
     | Right(_) =>
       try r = any-rune(k);
-      _parse-text-loop(Cons(singleton(r), Cons(*"\\", Cons(piece, acc))))(k)
+      _parse-string-loop(Cons(singleton(r), Cons(*"\\", Cons(piece, acc))))(k)
     | Left(_) =>
       try _ = _token("\"")(k);
       Right(join(core.list.reverse(Cons(piece, acc))))
@@ -152,20 +152,20 @@ define _parse-text-loop<c>(acc: list(text)) -> zonk(c, text) {
   }
 }
 
-inline _parse-text-inner<c>() -> zonk(c, text) {
+inline _parse-string-inner<c>() -> zonk(c, string) {
   (k) => {
     try _ = chunk("\"")(k);
-    try t = _parse-text-loop(Nil)(k);
+    try t = _parse-string-loop(Nil)(k);
     Right(t)
   }
 }
 
-constant _parse-text<c>: zonk(c, json) {
+constant _parse-string<c>: zonk(c, json) {
   (k) => {
-    try t = _parse-text-inner()(k);
-    let unquoted-text-or-none on t = _parse-json-text(t);
+    try t = _parse-string-inner()(k);
+    let unquoted-string-or-none on t = _parse-json-string(t);
     let _ = t;
-    match unquoted-text-or-none {
+    match unquoted-string-or-none {
     | Right(t) =>
       Right(Text(t))
     | Left(_) =>
@@ -180,10 +180,10 @@ nominal {
 
 inline _parse-object-item<c>(kvs: object(json)) -> zonk(c, object(json)) {
   (k) => {
-    try key = _parse-text-inner()(k);
+    try key = _parse-string-inner()(k);
     try _ = _token(":")(k);
     try value = _parse-json(k);
-    let unquoted-key-or-none on key = _parse-json-text(key);
+    let unquoted-key-or-none on key = _parse-json-string(key);
     let _ = key;
     match unquoted-key-or-none {
     | Right(key) =>
@@ -258,7 +258,7 @@ constant _parse-json<c>: zonk(c, json) {
       branch(
         _parse-object,
         branch(
-          _parse-text,
+          _parse-string,
           branch(
             _parse-number,
             _parse-array,

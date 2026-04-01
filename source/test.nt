@@ -1,14 +1,14 @@
 import {
-  core.text.io {print-line},
+  core.string.io {print-line},
   noa.check {check},
-  noa.gen.text {text-gen},
+  noa.gen.string {string-gen},
   noa.make-noa-kit {make-default-noa-kit},
   this.data {json},
   this.gen {json-gen},
   this.parse {parse-json},
   this.show {show-json},
-  this.text.parse {_parse-json-text},
-  this.text.show {_show-json-text-without-quote},
+  this.string.parse {_parse-json-string},
+  this.string.show {_show-json-string-without-quote},
   zonk.make-zonk-kit {make-zonk-kit},
 }
 
@@ -16,18 +16,18 @@ define main() -> unit {
   pin k = make-default-noa-kit();
   check::(
     k,
-    "∀ (t: text). quote(parse(quote(t))) == quote(t)",
-    text-gen,
-    (t: text) => {
+    "∀ (t: string). quote(parse(quote(t))) == quote(t)",
+    string-gen,
+    (t: string) => {
       pin t = t;
-      pin t-without-quote = _show-json-text-without-quote(t);
-      match _parse-json-text(t-without-quote) {
+      pin t-without-quote = _show-json-string-without-quote(t);
+      match _parse-json-string(t-without-quote) {
       | Left(_) =>
         False
       | Right(t2) =>
         pin t2 = t2;
-        pin t3 = _show-json-text-without-quote(t2);
-        eq-text(t-without-quote, t3)
+        pin t3 = _show-json-string-without-quote(t2);
+        eq-string(t-without-quote, t3)
       }
     },
   );

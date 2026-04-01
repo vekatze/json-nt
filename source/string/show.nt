@@ -7,7 +7,7 @@ import {
   core.memory {store-int},
   core.pointer {null-pointer, shift},
   core.rune,
-  core.text {_get-rune, _slice-N, format, join, text-byte-length},
+  core.string {_get-rune, _slice-N, format, join, string-byte-length},
   core.word,
 }
 
@@ -16,7 +16,7 @@ foreign {
   sprintf(pointer, pointer): c-int,
 }
 
-define _show-hex(x: int32) -> text {
+define _show-hex(x: int32) -> string {
   pin fmt = to-c-string("%02x");
   let fmt = magic cast(&c-string, pointer, fmt);
   let size = magic external snprintf(null-pointer, 0, fmt)(x: int32);
@@ -26,22 +26,22 @@ define _show-hex(x: int32) -> text {
   store-int(size, shift(ptr, core.word.size));
   let buffer = shift(ptr, mul-int(core.word.size, 2));
   let _ = magic external sprintf(buffer, fmt)(x: int32);
-  magic cast(pointer, text, ptr)
+  magic cast(pointer, string, ptr)
 }
 
-define _quote-text(haystack: &text) -> list(text) {
-  let len = text-byte-length(haystack);
+define _quote-string(haystack: &string) -> list(string) {
+  let len = string-byte-length(haystack);
   let f =
-    define loop(pivot: int, cursor: int) -> list(text) {
+    define loop(pivot: int, cursor: int) -> list(string) {
       let index = add-int(pivot, cursor);
       if ge-int(index, len) {
         List[_slice-N(haystack, pivot, cursor)]
       } else {
         let f =
-          (escaped-text: text) => {
+          (escaped-string: string) => {
             let piece = _slice-N(haystack, pivot, cursor);
             let rest = loop(add-int(index, 1), 0);
-            Cons(piece, Cons(escaped-text, rest))
+            Cons(piece, Cons(escaped-string, rest))
           };
         let r = _get-rune(haystack, index);
         match r {
@@ -71,11 +71,11 @@ define _quote-text(haystack: &text) -> list(text) {
   f(0, 0)
 }
 
-define _show-json-text(t: text) -> text {
+define _show-json-string(t: string) -> string {
   pin t = t;
-  join(Cons(*"\"", append(_quote-text(t), List[*"\""])))
+  join(Cons(*"\"", append(_quote-string(t), List[*"\""])))
 }
 
-define _show-json-text-without-quote(t: &text) -> text {
-  join(_quote-text(t))
+define _show-json-string-without-quote(t: &string) -> string {
+  join(_quote-string(t))
 }

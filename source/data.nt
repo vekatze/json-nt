@@ -3,7 +3,7 @@ import {
 }
 
 alias object(a) {
-  dictionary(text, a)
+  dictionary(string, a)
 }
 
 data json {
@@ -11,20 +11,20 @@ data json {
 | Bool(bool)
 | Integer(int)
 | Float(float)
-| Text(text)
+| Text(string)
 | Object(object(json))
 | Array(list(json))
 }
 
-define insert(kvs: object(json), key: text, value: json) -> object(json) {
-  let k = core.text.ord.as-ord;
+define insert(kvs: object(json), key: string, value: json) -> object(json) {
+  let k = core.string.ord.as-ord;
   core.dictionary.make-insert(k)(kvs, key, value)
 }
 
-define lookup(kvs: &object(json), key: &text) -> ?&json {
-  core.dictionary.make-lookup(core.text.ord.as-ord)(kvs, key)
+define lookup(kvs: &object(json), key: &string) -> ?&json {
+  core.dictionary.make-lookup(core.string.ord.as-ord)(kvs, key)
 }
 
-define delete(k: &ord(text), kvs: object(json), key: text) -> object(json) {
+define delete(k: &ord(string), kvs: object(json), key: string) -> object(json) {
   core.dictionary.delete(k, kvs, key)
 }

@@ -8,7 +8,7 @@ import {
   noa.gen.int {int-gen},
   noa.gen.list {list-gen},
   noa.gen.pair {pair-gen},
-  noa.gen.text {text-gen},
+  noa.gen.string {string-gen},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, json},
 }
 
@@ -20,8 +20,8 @@ define json-list-gen() -> gen(list(json)) {
   list-gen(json-gen)
 }
 
-define kvs-list-gen() -> gen(list(pair(text, json))) {
-  list-gen(pair-gen(text-gen, json-gen))
+define kvs-list-gen() -> gen(list(pair(string, json))) {
+  list-gen(pair-gen(string-gen, json-gen))
 }
 
 constant json-gen: gen(json) {
@@ -41,12 +41,12 @@ constant json-gen: gen(json) {
           let Gen {generate} = float-gen;
           Float(generate(size))
         } else-if eq-int(dice, 4) {
-          let Gen {generate} = text-gen;
+          let Gen {generate} = string-gen;
           Text(generate(size))
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2);
           let Gen {generate} = kvs-list-gen();
-          let k = core.text.ord.as-ord;
+          let k = core.string.ord.as-ord;
           Object(core.dictionary.from-list(k, generate(size)))
         } else {
           let size = div-int(size, 2);
@@ -70,11 +70,11 @@ constant json-gen: gen(json) {
           let Gen {shrink} = float-gen;
           for-each(shrink(x), Float)
         | Text(x) =>
-          let Gen {shrink} = text-gen;
+          let Gen {shrink} = string-gen;
           for-each(shrink(x), Text)
         | Object(kvs) =>
           let Gen {shrink} = kvs-list-gen();
-          let k = core.text.ord.as-ord;
+          let k = core.string.ord.as-ord;
           for-each(shrink(core.dictionary.to-list(kvs)), (kvs) => {
             Object(core.dictionary.from-list(k, kvs))
           })
