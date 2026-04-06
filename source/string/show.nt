@@ -12,8 +12,8 @@ import {
 }
 
 foreign {
-  snprintf(pointer, c-int, pointer): c-int,
-  sprintf(pointer, pointer): c-int,
+  snprintf(pointer, c-int, pointer) -> c-int,
+  sprintf(pointer, pointer) -> c-int,
 }
 
 define _show-hex(x: int32) -> string {
