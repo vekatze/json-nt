@@ -16,7 +16,7 @@ nominal {
 }
 
 constant as-show: show(json) {
-  Show {show := show-json}
+  Show{show := show-json}
 }
 
 constant list-json: show(list(json)) {
@@ -24,7 +24,7 @@ constant list-json: show(list(json)) {
 }
 
 constant showable-object: show(object(json)) {
-  Show {
+  Show{
     show := {
       (kvs) => {
         let kvs = core.dictionary.to-list(kvs);
@@ -47,7 +47,7 @@ define _show-object(kvs: object(json)) -> list(string) {
     for-each(kvs, (kv) => {
       let Pair(k, v) = kv;
       let k = {
-        let Show {show} = core.string.show.as-show;
+        let Show{show} = core.string.show.as-show;
         show(k)
       };
       let v = show-json(v);
@@ -73,10 +73,10 @@ define show-json(j: json) -> string {
   | Text(x) =>
     _show-json-string(x)
   | Object(kvs) =>
-    let Show {show} = showable-object;
+    let Show{show} = showable-object;
     show(kvs)
   | Array(xs) =>
-    let Show {show} = list-json;
+    let Show{show} = list-json;
     show(xs)
   }
 }
