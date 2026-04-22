@@ -49,18 +49,18 @@ define _quote-string(haystack: &string) -> list(string) {
           f(*"\\b")
         | `\u{9}` =>
           f(*"\\t")
-        | `\u{a}` =>
+        | `\u{A}` =>
           f(*"\\n")
-        | `\u{c}` =>
+        | `\u{C}` =>
           f(*"\\f")
-        | `\u{d}` =>
+        | `\u{D}` =>
           f(*"\\r")
         | `\u{22}` =>
           f(*"\\\"")
-        | `\u{5c}` =>
+        | `\u{5C}` =>
           f(*"\\\\")
         | _ =>
-          if le-rune(r, `\u{1f}`) {
+          if le-rune(r, `\u{1F}`) {
             f(format("\\u00{}", List[_show-hex(magic cast(rune, int32, r))]))
           } else {
             loop(pivot, add-int(cursor, core.rune.size(r)))

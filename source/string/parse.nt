@@ -31,17 +31,17 @@ define _unquote-string(t: string) -> either(error, list(string)) {
     } else-if eq-rune(c, `t`) {
       Right(List[*"\u{9}", rest])
     } else-if eq-rune(c, `n`) {
-      Right(List[*"\u{a}", rest])
+      Right(List[*"\u{A}", rest])
     } else-if eq-rune(c, `f`) {
-      Right(List[*"\u{c}", rest])
+      Right(List[*"\u{C}", rest])
     } else-if eq-rune(c, `r`) {
-      Right(List[*"\u{d}", rest])
+      Right(List[*"\u{D}", rest])
     } else-if eq-rune(c, `"`) {
       Right(List[*"\u{22}", rest])
     } else-if eq-rune(c, `/`) {
-      Right(List[*"\u{2f}", rest])
+      Right(List[*"\u{2F}", rest])
     } else-if eq-rune(c, `\\`) {
-      Right(List[*"\u{5c}", rest])
+      Right(List[*"\u{5C}", rest])
     } else-if eq-rune(c, `u`) {
       let scalar-value-string on rest = take-N(rest, 4);
       let len on scalar-value-string = core.string.length(scalar-value-string);
