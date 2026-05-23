@@ -1,32 +1,47 @@
 import {
-  core.string.io {print-line},
+  core.eq.generic {eq-data},
   noa.check {check},
   noa.gen.string {string-gen},
-  noa.make-noa-kit {make-default-noa-kit},
+  noa.noa-kit {make-default-noa-kit},
+  noa.test {test},
+  this._string.parse {parse-json-string},
+  this._string.show {show-json-string-without-quote},
   this.data {json},
   this.gen {json-gen},
   this.parse {parse-json},
   this.show {show-json},
-  this.string.parse {_parse-json-string},
-  this.string.show {_show-json-string-without-quote},
-  zonk.make-zonk-kit {make-zonk-kit},
+  zonk.parse {make-zonk-kit},
 }
 
 define main() -> unit {
   pin k = make-default-noa-kit();
+  test(
+    k,
+    "JSON Unicode escape accepts four hexadecimal digits without a 0x prefix",
+    () => {
+      match parse-json-string("\\u001e") {
+      | Left(_) =>
+        False
+      | Right(t) =>
+        pin t = t;
+        pin q = show-json-string-without-quote(t);
+        eq-string(q, "\\u001e")
+      }
+    },
+  );
   check::(
     k,
     "∀ (t: string). quote(parse(quote(t))) == quote(t)",
     string-gen,
     (t: string) => {
       pin t = t;
-      pin t-without-quote = _show-json-string-without-quote(t);
-      match _parse-json-string(t-without-quote) {
+      pin t-without-quote = show-json-string-without-quote(t);
+      match parse-json-string(t-without-quote) {
       | Left(_) =>
         False
       | Right(t2) =>
         pin t2 = t2;
-        pin t3 = _show-json-string-without-quote(t2);
+        pin t3 = show-json-string-without-quote(t2);
         eq-string(t-without-quote, t3)
       }
     },

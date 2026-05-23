@@ -17,12 +17,12 @@ data json {
 }
 
 define insert(kvs: object(json), key: string, value: json) -> object(json) {
-  let k = core.string.ord.as-ord;
-  core.dictionary.make-insert(k)(kvs, key, value)
+  pin k = core.string.ord.as-ord;
+  core.dictionary.insert(k, kvs, key, value)
 }
 
-define lookup(kvs: &object(json), key: &string) -> ?&json {
-  core.dictionary.make-lookup(core.string.ord.as-ord)(kvs, key)
+define lookup(k: &ord(string), kvs: &object(json), key: &string) ->> ?&json {
+  core.dictionary.lookup(k, kvs, key)
 }
 
 define delete(k: &ord(string), kvs: object(json), key: string) -> object(json) {

@@ -4,11 +4,9 @@ import {
   core.int.show {show-int},
   core.list {append, for-each, intercalate},
   core.list.show,
-  core.show {Show, show},
   core.string {join},
-  core.string.show,
+  this._string.show {show-json-string},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
-  this.string.show {_show-json-string},
 }
 
 nominal {
@@ -16,44 +14,29 @@ nominal {
 }
 
 constant as-show: show(json) {
-  Show{show := show-json}
+  Show{
+    render := {
+      (j) => {
+        show-json(*j)
+      }
+    },
+  }
 }
 
 constant list-json: show(list(json)) {
   core.list.show.as-show(as-show)
 }
 
-constant showable-object: show(object(json)) {
-  Show{
-    show := {
-      (kvs) => {
-        let kvs = core.dictionary.to-list(kvs);
-        let kvs =
-          for-each(kvs, (kv) => {
-            let Pair(k, v) = kv;
-            let k = _show-json-string(k);
-            let v = show-json(v);
-            join(List[k, *": ", v])
-          });
-        join(Cons(*"{", append(intercalate(kvs, *", "), List[*"}"])))
-      }
-    },
-  }
-}
-
-define _show-object(kvs: object(json)) -> list(string) {
+define _show-object(kvs: object(json)) -> string {
   let kvs = core.dictionary.to-list(kvs);
   let kvs =
     for-each(kvs, (kv) => {
       let Pair(k, v) = kv;
-      let k = {
-        let Show{show} = core.string.show.as-show;
-        show(k)
-      };
+      let k = show-json-string(k);
       let v = show-json(v);
       join(List[k, *": ", v])
     });
-  Cons(*"{", append(intercalate(kvs, *", "), List[*"}"]))
+  join(Cons(*"{", append(intercalate(kvs, *", "), List[*"}"])))
 }
 
 define show-json(j: json) -> string {
@@ -71,12 +54,12 @@ define show-json(j: json) -> string {
   | Float(x) =>
     show-float(x, 6)
   | Text(x) =>
-    _show-json-string(x)
+    show-json-string(x)
   | Object(kvs) =>
-    let Show{show} = showable-object;
-    show(kvs)
+    _show-object(kvs)
   | Array(xs) =>
-    let Show{show} = list-json;
-    show(xs)
+    let Show{render} = list-json;
+    pin xs = xs;
+    render(xs)
   }
 }

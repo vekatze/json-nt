@@ -1,0 +1,101 @@
+import {
+  core.list {append},
+  core.rune,
+  core.string {byte-length, join},
+  core.string.unsafe {get-rune-unchecked, slice-N},
+}
+
+define _hex-digit(x: int) -> &string {
+  match x {
+  | 0 =>
+    "0"
+  | 1 =>
+    "1"
+  | 2 =>
+    "2"
+  | 3 =>
+    "3"
+  | 4 =>
+    "4"
+  | 5 =>
+    "5"
+  | 6 =>
+    "6"
+  | 7 =>
+    "7"
+  | 8 =>
+    "8"
+  | 9 =>
+    "9"
+  | 10 =>
+    "a"
+  | 11 =>
+    "b"
+  | 12 =>
+    "c"
+  | 13 =>
+    "d"
+  | 14 =>
+    "e"
+  | _ =>
+    "f"
+  }
+}
+
+define _show-hex-byte(x: int) -> string {
+  join(List[
+    *_hex-digit(div-int(x, 16)),
+    *_hex-digit(rem-int(x, 16)),
+  ])
+}
+
+define _quote-string(haystack: &string) -> list(string) {
+  let len = byte-length(haystack);
+  let f =
+    define loop(pivot: int, cursor: int) -> list(string) {
+      let index = add-int(pivot, cursor);
+      if ge-int(index, len) {
+        List[slice-N(haystack, pivot, cursor)]
+      } else {
+        let f =
+          (escaped-string: string) => {
+            let piece = slice-N(haystack, pivot, cursor);
+            let rest = loop(add-int(index, 1), 0);
+            Cons(piece, Cons(escaped-string, rest))
+          };
+        let r = get-rune-unchecked(haystack, index);
+        match r {
+        | `\u{8}` =>
+          f(*"\\b")
+        | `\u{9}` =>
+          f(*"\\t")
+        | `\u{A}` =>
+          f(*"\\n")
+        | `\u{C}` =>
+          f(*"\\f")
+        | `\u{D}` =>
+          f(*"\\r")
+        | `\u{22}` =>
+          f(*"\\\"")
+        | `\u{5C}` =>
+          f(*"\\\\")
+        | _ =>
+          if le-rune(r, `\u{1F}`) {
+            f(join(List[*"\\u00", _show-hex-byte(core.rune.to-int(r))]))
+          } else {
+            loop(pivot, add-int(cursor, core.rune.size(r)))
+          }
+        }
+      }
+    };
+  f(0, 0)
+}
+
+define show-json-string(t: string) -> string {
+  pin t = t;
+  join(Cons(*"\"", append(_quote-string(t), List[*"\""])))
+}
+
+define show-json-string-without-quote(t: &string) -> string {
+  join(_quote-string(t))
+}

@@ -5,29 +5,29 @@ import {
   core.int.parse {parse-int},
   core.list {reverse},
   core.string {join, singleton},
+  this._string.parse {parse-json-string},
   this.data {Array, Bool, Float, Integer, Null, Object, Text, insert, json, object},
-  this.string.parse {_parse-json-string},
-  zonk.error {parse-error},
-  zonk.make-parse-error {make-parse-error},
   zonk.parse {
     any-rune,
     branch,
     chunk,
     drop-while,
     end-of-input,
+    make-parse-error,
     optional,
+    parse-error,
     parsed,
     report-unexpected-input,
     take-while,
     zonk,
+    zonk-kit,
   },
-  zonk.zonk-kit {zonk-kit},
 }
 
 define _is-space(r: rune) -> bool {
   if eq-rune(r, ` `) {
     True
-  } else-if ule-int32(sub-int32(magic cast(rune, int32, r), 0x9), 0x4) {
+  } else-if and(le-rune(`\u{9}`, r), le-rune(r, `\u{D}`)) {
     True
   } else {
     False
@@ -163,7 +163,7 @@ inline _parse-string-inner<c>() -> zonk(c, string) {
 constant _parse-string<c>: zonk(c, json) {
   (k) => {
     try t = _parse-string-inner()(k);
-    let unquoted-string-or-none on t = _parse-json-string(t);
+    let unquoted-string-or-none on t = parse-json-string(t);
     let _ = t;
     match unquoted-string-or-none {
     | Right(t) =>
@@ -183,7 +183,7 @@ inline _parse-object-item<c>(kvs: object(json)) -> zonk(c, object(json)) {
     try key = _parse-string-inner()(k);
     try _ = _token(":")(k);
     try value = _parse-json(k);
-    let unquoted-key-or-none on key = _parse-json-string(key);
+    let unquoted-key-or-none on key = parse-json-string(key);
     let _ = key;
     match unquoted-key-or-none {
     | Right(key) =>

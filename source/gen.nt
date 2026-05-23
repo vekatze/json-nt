@@ -46,7 +46,7 @@ constant json-gen: gen(json) {
         } else-if eq-int(dice, 5) {
           let size = div-int(size, 2);
           let Gen{generate} = kvs-list-gen();
-          let k = core.string.ord.as-ord;
+          pin k = core.string.ord.as-ord;
           Object(core.dictionary.from-list(k, generate(size)))
         } else {
           let size = div-int(size, 2);
@@ -74,7 +74,7 @@ constant json-gen: gen(json) {
           for-each(shrink(x), Text)
         | Object(kvs) =>
           let Gen{shrink} = kvs-list-gen();
-          let k = core.string.ord.as-ord;
+          pin k = core.string.ord.as-ord;
           for-each(shrink(core.dictionary.to-list(kvs)), (kvs) => {
             Object(core.dictionary.from-list(k, kvs))
           })

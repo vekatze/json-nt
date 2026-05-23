@@ -1,7 +1,7 @@
 {
   target {
     test {
-      main "test.nt",
+      main "_test.nt",
       build-option [
         "-fsanitize=address",
       ],
@@ -9,22 +9,22 @@
   },
   dependency {
     core {
-      digest "yNWbpR6FH89l8vrvc2fh4PMZYlLEGtCzBHxT8aZQS5o",
+      digest "AX53Hz1GVFQcEX-csE0C33px9odb_zm98r5nRFnMvRg",
       mirror [
-        "https://github.com/vekatze/neut-core/raw/main/archive/0-54-9.tar.zst",
+        "https://github.com/vekatze/neut-core/raw/main/archive/0-55-1.tar.zst",
       ],
       enable-preset true,
     },
     zonk {
-      digest "ubl81NKJoBVI8Fp7gXvnMijdN3kbOXho9lh_fBFXmRU",
+      digest "RuZSSMI9qcuFZyu9iYxZFCOawpgHnu6uUFG2ErPgRX0",
       mirror [
-        "https://github.com/vekatze/zonk/raw/main/archive/0-2-12.tar.zst",
+        "https://github.com/vekatze/zonk/raw/main/archive/0-2-13.tar.zst",
       ],
     },
     noa {
-      digest "cXAaz6teB8LLupSGCvN_d2KVMpSaKKYI5ec6qt06nBA",
+      digest "pYQtECaquybWZZ8-FiJLqx7uR1_iBalTYXBzGh0weHs",
       mirror [
-        "https://github.com/vekatze/noa/raw/main/archive/0-4-22.tar.zst",
+        "https://github.com/vekatze/noa/raw/main/archive/0-4-23.tar.zst",
       ],
     },
   },

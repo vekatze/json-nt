@@ -1,27 +1,44 @@
 import {
-  core.int.parse {parse-hex},
   core.int.show {show-int},
-  core.list {any, concat, for-each-E, for-each-EN, intercalate},
+  core.list {concat, for-each-E, for-each-EN, intercalate},
   core.rune,
   core.string {drop, format, singleton, split, take-N},
-  core.string.io {print-line},
 }
 
 data error {
 | JSON-String-Error(string)
 }
 
-define _is-hex-digit(r: rune) -> bool {
-  any(
-    List[
-      and(le-rune(`0`, r), le-rune(r, `9`)),
-      and(le-rune(`a`, r), le-rune(r, `f`)),
-      and(le-rune(`A`, r), le-rune(r, `F`)),
-    ],
-  )
+define is-hex-digit(r: rune) -> bool {
+  if and(le-rune(`0`, r), le-rune(r, `9`)) {
+    True
+  } else-if and(le-rune(`a`, r), le-rune(r, `f`)) {
+    True
+  } else {
+    and(le-rune(`A`, r), le-rune(r, `F`))
+  }
 }
 
-define _unquote-string(t: string) -> either(error, list(string)) {
+define hex-digit-value(r: rune) -> int {
+  if and(le-rune(`0`, r), le-rune(r, `9`)) {
+    sub-int(core.rune.to-int(r), core.rune.to-int(`0`))
+  } else-if and(le-rune(`a`, r), le-rune(r, `f`)) {
+    add-int(10, sub-int(core.rune.to-int(r), core.rune.to-int(`a`)))
+  } else {
+    add-int(10, sub-int(core.rune.to-int(r), core.rune.to-int(`A`)))
+  }
+}
+
+define parse-hex-digits(t: string, acc: int) -> int {
+  match core.string.uncons(t) {
+  | Left(_) =>
+    acc
+  | Right(Pair(r, rest)) =>
+    parse-hex-digits(rest, add-int(mul-int(acc, 16), hex-digit-value(r)))
+  }
+}
+
+define unquote-string(t: string) -> either(error, list(string)) {
   match core.string.uncons(t) {
   | Left(_) =>
     Right(List[*"\\"])
@@ -46,18 +63,14 @@ define _unquote-string(t: string) -> either(error, list(string)) {
       let scalar-value-string on rest = take-N(rest, 4);
       let len on scalar-value-string = core.string.length(scalar-value-string);
       pin scalar-value-string = scalar-value-string;
-      if and(eq-int(len, 4), core.string.all(scalar-value-string, _is-hex-digit)) {
-        match parse-hex(scalar-value-string) {
+      if and(eq-int(len, 4), core.string.all(scalar-value-string, is-hex-digit)) {
+        let v = parse-hex-digits(*scalar-value-string, 0);
+        match core.rune.from-int(v) {
         | Left(_) =>
-          Left(JSON-String-Error(format("Could not parse `{}` as a hexadecimal integer", List[*scalar-value-string])))
-        | Right(v) =>
-          match core.rune.from-int(v) {
-          | Left(_) =>
-            Left(JSON-String-Error(format("The value `{}` is outsidethe Unicode codespace", List[show-int(v)])))
-          | Right(r) =>
-            let rest = drop(rest, 4);
-            Right(List[singleton(r), rest])
-          }
+          Left(JSON-String-Error(format("The value `{}` is outside the Unicode codespace", List[show-int(v)])))
+        | Right(r) =>
+          let rest = drop(rest, 4);
+          Right(List[singleton(r), rest])
         }
       } else {
         Left(JSON-String-Error(format("Expected 4-digit Unicode codepoint, but got: {}", List[*scalar-value-string])))
@@ -68,32 +81,19 @@ define _unquote-string(t: string) -> either(error, list(string)) {
   }
 }
 
-define _parse-json-string-fragment(t: &string) -> either(error, list(string)) {
+define parse-json-string-fragment(t: &string) -> either(error, list(string)) {
   match split(t, "\\") {
   | Nil =>
     // unreachable
     Left(JSON-String-Error(*"json.string.parse._parse-json-string-fragment"))
   | Cons(t, ts) =>
-    try fragment-lists = for-each-E(ts, _unquote-string);
+    try fragment-lists = for-each-E(ts, unquote-string);
     Right(Cons(t, concat(fragment-lists)))
   }
 }
 
-define _parse-json-string(t: &string) -> either(error, string) {
+define parse-json-string(t: &string) -> either(error, string) {
   pin ts = split(t, "\\\\");
-  try tss = for-each-EN(ts, _parse-json-string-fragment);
+  try tss = for-each-EN(ts, parse-json-string-fragment);
   Right(core.string.join(core.list.concat(intercalate(tss, List[*"\\"]))))
-}
-
-define zen() -> unit {
-  match _parse-json-string("hello,\\u12abrld") {
-  | Left(JSON-String-Error(e)) =>
-    pin e = e;
-    print("error: ");
-    print-line(e);
-  | Right(t) =>
-    pin t = t;
-    print("success: ");
-    print-line(t);
-  }
 }

@@ -1,0 +1,16 @@
+import {
+  this._string.parse {JSON-String-Error, parse-json-string},
+}
+
+define zen() -> unit {
+  match parse-json-string("hello,\\u12abrld") {
+  | Left(JSON-String-Error(e)) =>
+    pin e = e;
+    print("error: ");
+    print-line(e);
+  | Right(t) =>
+    pin t = t;
+    print("success: ");
+    print-line(t);
+  }
+}
