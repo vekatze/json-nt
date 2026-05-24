@@ -5,7 +5,7 @@ A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming langua
 ## Installation
 
 ```sh
-neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-50.tar.zst
+neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-51.tar.zst
 ```
 
 ## Types
@@ -37,7 +37,7 @@ define show-json(j: json) -> string
 define insert(kvs: object(json), key: string, value: json) -> object(json)
 
 // Looks up a key in an object.
-define lookup(kvs: &object(json), key: &string) -> ?&json
+define lookup(k: &ord(string), kvs: &object(json), key: &string) ->> ?&json
 
 // Deletes a key from an object.
 define delete(k: &ord(string), kvs: object(json), key: string) -> object(json)
@@ -46,7 +46,7 @@ define delete(k: &ord(string), kvs: object(json), key: string) -> object(json)
 ## Example
 
 ```neut
-// see source/test.nt
+// see source/_test.nt
 define zen() -> unit {
   pin k = make-zonk-kit(*" {\"key\" : 1234}", Unit);
   match parse-json(k) {
