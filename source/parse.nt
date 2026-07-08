@@ -1,65 +1,69 @@
 import {
-  core.dictionary,
-  core.float.parse {parse-float},
-  core.function {compose},
-  core.int.parse {parse-int},
-  core.list {reverse},
-  core.string {join, singleton},
-  this._string.parse {parse-json-string},
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, insert, json, object},
-  zonk.parse {
+  core::bool {any},
+  core::float.parse {parse-float},
+  core::function {compose},
+  core::int.parse {parse-int},
+  core::rune {from-int},
+  core::string {byte-length},
+  core::string.builder {append-rune-UTF8, append-string, extract, make-string-builder, string-builder},
+  core::string.unsafe {get-rune-unchecked},
+  zonk::parse {
     any-rune,
     branch,
     chunk,
     drop-while,
     end-of-input,
     make-parse-error,
+    look-ahead,
     optional,
     parse-error,
     parsed,
     report-unexpected-input,
+    scan-while,
     take-while,
     zonk,
     zonk-kit,
   },
+  _string.parse {hex-digit-value, is-hex-digit},
+  data {Array, Bool, Float, Integer, Null, Object, Text, append-json-array, empty-json-array, empty-object, insert, json, make-object, object},
 }
 
 define _is-space(r: rune) -> bool {
   if eq-rune(r, ` `) {
     True
-  } else-if and(le-rune(`\u{9}`, r), le-rune(r, `\u{D}`)) {
+  } else-if and::(le-rune(`\u{9}`, r), le-rune(r, `\u{D}`)) {
     True
   } else {
     False
   }
 }
 
-constant _skip-space<c>: zonk(c, unit) {
+constant _skip-space: zonk(unit) {
   drop-while(_is-space)
 }
 
-inline _token<c>(t: &string) -> zonk(c, unit) {
-  (k) => {
+inline _token(t: text) -> zonk(unit) {
+  (k) =>> {
     try _ = chunk(t)(k);
     try _ = _skip-space(k);
     Right(Unit)
   }
 }
 
-constant _parse-null<c>: zonk(c, json) {
-  (k) => {
+constant _parse-null: zonk(json) {
+  (k) =>> {
     try _ = _token("null")(k);
     Right(Null)
   }
 }
 
-constant _parse-bool<c>: zonk(c, json) {
+constant _parse-bool: zonk(json) {
   branch(
-    (k) => {
+    (k) =>> {
       try _ = _token("true")(k);
       Right(Bool(True))
     },
-    (k) => {
+    (k) =>> {
       try _ = _token("false")(k);
       Right(Bool(False))
     },
@@ -69,133 +73,228 @@ constant _parse-bool<c>: zonk(c, json) {
 define _any-number(r: rune) -> bool {
   let b1 = le-rune(`0`, r);
   let b2 = le-rune(r, `9`);
-  and(b1, b2)
+  and::(b1, b2)
 }
 
 define _is-integer-rune(r: rune) -> bool {
-  or(
+  any::[
     _any-number(r),
-    or(
-      eq-rune(r, `+`),
-      eq-rune(r, `-`),
-    ),
-  )
+    eq-rune(r, `+`),
+    eq-rune(r, `-`),
+  ]
 }
 
 define _is-float-rune(r: rune) -> bool {
-  or(
+  any::[
     _any-number(r),
-    or(
-      eq-rune(r, `.`),
-      or(
-        eq-rune(r, `e`),
-        or(
-          eq-rune(r, `E`),
-          or(
-            eq-rune(r, `+`),
-            eq-rune(r, `-`),
-          ),
-        ),
-      ),
-    ),
-  )
+    eq-rune(r, `.`),
+    eq-rune(r, `e`),
+    eq-rune(r, `E`),
+    eq-rune(r, `+`),
+    eq-rune(r, `-`),
+  ]
 }
 
-constant _parse-number<c>: zonk(c, json) {
-  // RFC8259:
-  // > This specification allows implementations to set limits on the range
-  // > and precisionfloats accepted.
-  (k) => {
-    try num-string = take-while(_is-float-rune)(k);
-    try _ = _skip-space(k);
-    let is-integer on num-string = core.string.all(num-string, _is-integer-rune);
+define _has-leading-zero(t: &string) -> bool {
+  let len = byte-length(t);
+  let offset =
+    if gt-int(len, 0) {
+      if eq-rune(get-rune-unchecked(t, 0), `-`) {
+        1
+      } else {
+        0
+      }
+    } else {
+      0
+    };
+  if gt-int(len, add-int(offset, 1)) {
+    if eq-rune(get-rune-unchecked(t, offset), `0`) {
+      let next = get-rune-unchecked(t, add-int(offset, 1));
+      _any-number(next)
+    } else {
+      False
+    }
+  } else {
+    False
+  }
+}
+
+define _interpret-number(t: &string) ->> ?json {
+  if _has-leading-zero(t) {
+    none
+  } else {
+    let is-integer = core::string.all(t, _is-integer-rune);
     if is-integer {
-      let num-or-none on num-string = parse-int(num-string);
-      let _ = num-string;
-      match num-or-none {
+      match parse-int(t) {
       | Right(num) =>
         Right(Integer(num))
       | Left(_) =>
-        report-unexpected-input("number")
+        none
       }
     } else {
-      let num-or-none on num-string = parse-float(num-string);
-      let _ = num-string;
-      match num-or-none {
+      match parse-float(t) {
       | Right(num) =>
         Right(Float(num))
       | Left(_) =>
-        report-unexpected-input("number")
+        none
       }
     }
+  }
+}
+
+constant _parse-number: zonk(json) {
+  // RFC8259:
+  // > This specification allows implementations to set limits on the range
+  // > and precisionfloats accepted.
+  (k) =>> {
+    try json =
+      scan-while("number", _is-float-rune, (num-string) => {
+        lift {_interpret-number(num-string)}
+      })(k);
+    try _ = _skip-space(k);
+    Right(json)
   }
 }
 
 define _special-string(r: rune) -> bool {
-  let b1 = eq-rune(r, `"`);
-  let b2 = eq-rune(r, `\\`);
-  or(b1, b2)
+  if le-rune(r, `\u{1F}`) {
+    True
+  } else {
+    or::(eq-rune(r, `"`), eq-rune(r, `\\`))
+  }
 }
 
-define _parse-string-loop<c>(acc: list(string)) -> zonk(c, string) {
-  (k) => {
-    try piece = take-while(compose(not, _special-string))(k);
-    try backslash-or-none = optional(chunk("\\"))(k);
-    match backslash-or-none {
+inline _scan-string-piece(b: &string-builder) -> zonk(unit) {
+  scan-while("JSON string character", compose(not, _special-string), (piece) => {
+    append-string(b, piece);
+    lift {Right(Unit)}
+  })
+}
+
+define _parse-unicode-escape(b: &string-builder, k: &zonk-kit) ->> parsed(unit) {
+  try r1 = any-rune(k);
+  try r2 = any-rune(k);
+  try r3 = any-rune(k);
+  try r4 = any-rune(k);
+  if and::(is-hex-digit(r1), and::(is-hex-digit(r2), and::(is-hex-digit(r3), is-hex-digit(r4)))) {
+    let value = add-int(
+      mul-int(hex-digit-value(r1), 4096),
+      add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
+    );
+    match from-int(value) {
+    | Right(r) =>
+      append-rune-UTF8(b, r);
+      Right(Unit)
+    | Left(_) =>
+      report-unexpected-input(k, "JSON Unicode escape")
+    }
+  } else {
+    report-unexpected-input(k, "JSON Unicode escape")
+  }
+}
+
+define _parse-string-escape(b: &string-builder, k: &zonk-kit) ->> parsed(unit) {
+  try r = any-rune(k);
+  if eq-rune(r, `b`) {
+    append-rune-UTF8(b, `\u{8}`);
+    Right(Unit)
+  } else-if eq-rune(r, `t`) {
+    append-rune-UTF8(b, `\u{9}`);
+    Right(Unit)
+  } else-if eq-rune(r, `n`) {
+    append-rune-UTF8(b, `\u{A}`);
+    Right(Unit)
+  } else-if eq-rune(r, `f`) {
+    append-rune-UTF8(b, `\u{C}`);
+    Right(Unit)
+  } else-if eq-rune(r, `r`) {
+    append-rune-UTF8(b, `\u{D}`);
+    Right(Unit)
+  } else-if eq-rune(r, `"`) {
+    append-rune-UTF8(b, `\u{22}`);
+    Right(Unit)
+  } else-if eq-rune(r, `/`) {
+    append-rune-UTF8(b, `\u{2F}`);
+    Right(Unit)
+  } else-if eq-rune(r, `\\`) {
+    append-rune-UTF8(b, `\u{5C}`);
+    Right(Unit)
+  } else-if eq-rune(r, `u`) {
+    _parse-unicode-escape(b, k)
+  } else {
+    report-unexpected-input(k, "JSON string escape")
+  }
+}
+
+define _parse-string-into(b: &string-builder, k: &zonk-kit) ->> parsed(unit) {
+  try _ = _scan-string-piece(b)(k);
+  try backslash-or-none = optional(chunk("\\"))(k);
+  match backslash-or-none {
+  | Right(_) =>
+    try _ = _parse-string-escape(b, k);
+    _parse-string-into(b, k)
+  | Left(_) =>
+    try _ = _token("\"")(k);
+    Right(Unit)
+  }
+}
+
+define _parse-string-after-first-escape(piece: &string, k: &zonk-kit) ->> parsed(string) {
+  let b = make-string-builder(64);
+  let result on b = {
+    append-string(b, piece);
+    _parse-string-escape(b, k)
+  };
+  match result {
+  | Left(_) =>
+    Left(Unit)
+  | Right(_) =>
+    let result on b = _parse-string-into(b, k);
+    match result {
+    | Left(_) =>
+      Left(Unit)
     | Right(_) =>
-      try r = any-rune(k);
-      _parse-string-loop(Cons(singleton(r), Cons(*"\\", Cons(piece, acc))))(k)
-    | Left(_) =>
-      try _ = _token("\"")(k);
-      Right(join(core.list.reverse(Cons(piece, acc))))
+      Right(extract(b))
     }
   }
 }
 
-inline _parse-string-inner<c>() -> zonk(c, string) {
-  (k) => {
-    try _ = chunk("\"")(k);
-    try t = _parse-string-loop(Nil)(k);
-    Right(t)
+define _parse-string-inner(k: &zonk-kit) ->> parsed(string) {
+  try _ = chunk("\"")(k);
+  // The common case needs no unescaping. `take-while` returns an O(1) slice
+  // of the input, so avoid allocating and copying it into a builder.
+  try piece = take-while(compose(not, _special-string))(k);
+  try backslash-or-none = optional(chunk("\\"))(k);
+  match backslash-or-none {
+  | Left(_) =>
+    try _ = _token("\"")(k);
+    Right(piece)
+  | Right(_) =>
+    pin piece = piece;
+    _parse-string-after-first-escape(piece, k)
   }
 }
 
-constant _parse-string<c>: zonk(c, json) {
-  (k) => {
-    try t = _parse-string-inner()(k);
-    let unquoted-string-or-none on t = parse-json-string(t);
-    let _ = t;
-    match unquoted-string-or-none {
-    | Right(t) =>
-      Right(Text(t))
-    | Left(_) =>
-      report-unexpected-input("JSON string")
-    }
+constant _parse-string: zonk(json) {
+  (k) =>> {
+    try t = _parse-string-inner(k);
+    Right(Text(t))
   }
 }
 
 nominal {
-  constant _parse-json<c>: zonk(c, json),
+  constant _parse-json: zonk(json),
 }
 
-inline _parse-object-item<c>(kvs: object(json)) -> zonk(c, object(json)) {
-  (k) => {
-    try key = _parse-string-inner()(k);
-    try _ = _token(":")(k);
-    try value = _parse-json(k);
-    let unquoted-key-or-none on key = parse-json-string(key);
-    let _ = key;
-    match unquoted-key-or-none {
-    | Right(key) =>
-      Right(insert(kvs, key, value))
-    | Left(_) =>
-      report-unexpected-input("JSON key")
-    }
-  }
+define _parse-object-item(k: &zonk-kit, kvs: object(json)) ->> parsed(object(json)) {
+  try key = _parse-string-inner(k);
+  try _ = _token(":")(k);
+  try value = _parse-json(k);
+  Right(insert(kvs, key, value))
 }
 
-define _parse-object-inner<c>(k: &zonk-kit(c), acc: object(json)) -> parsed(json) {
-  try acc = _parse-object-item(acc)(k);
+define _parse-object-inner(k: &zonk-kit, acc: object(json)) ->> parsed(json) {
+  try acc = _parse-object-item(k, acc);
   try comma-or-none = optional(_token(","))(k);
   match comma-or-none {
   | Right(_) =>
@@ -205,73 +304,71 @@ define _parse-object-inner<c>(k: &zonk-kit(c), acc: object(json)) -> parsed(json
   }
 }
 
-constant _parse-object<c>: zonk(c, json) {
-  (k) => {
+constant _parse-object: zonk(json) {
+  (k) =>> {
     try _ = _token("{")(k);
-    try kvs =
-      branch(
-        (k) => {
-          _parse-object-inner(k, core.dictionary.empty)
-        },
-        (_) => {
-          Right(Object(core.dictionary.empty))
-        },
-      )(k);
-    try _ = _token("}")(k);
-    Right(kvs)
+    try close-or-none = optional(_token("}"))(k);
+    match close-or-none {
+    | Right(_) =>
+      Right(Object(empty-object()))
+    | Left(_) =>
+      try kvs = _parse-object-inner(k, make-object());
+      try _ = _token("}")(k);
+      Right(kvs)
+    }
   }
 }
 
-define _parse-array-inner<c>(k: &zonk-kit(c), acc: list(json)) -> parsed(json) {
+define _parse-array-inner(k: &zonk-kit, acc: array(json)) ->> parsed(json) {
   try v = _parse-json(k);
   try comma-or-none = optional(_token(","))(k);
   match comma-or-none {
   | Right(_) =>
-    _parse-array-inner(k, Cons(v, acc))
+    _parse-array-inner(k, append-json-array(acc, v))
   | Left(_) =>
-    Right(Array(reverse(Cons(v, acc))))
+    Right(Array(append-json-array(acc, v)))
   }
 }
 
-constant _parse-array<c>: zonk(c, json) {
-  (k) => {
+constant _parse-array: zonk(json) {
+  (k) =>> {
     try _ = _token("[")(k);
-    try vs =
-      branch(
-        (k) => {
-          _parse-array-inner(k, List[])
-        },
-        (_) => {
-          Right(Array(List[]))
-        },
-      )(k);
-    try _ = _token("]")(k);
-    Right(vs)
+    try close-or-none = optional(_token("]"))(k);
+    match close-or-none {
+    | Right(_) =>
+      Right(Array(empty-json-array()))
+    | Left(_) =>
+      try vs = _parse-array-inner(k, empty-json-array());
+      try _ = _token("]")(k);
+      Right(vs)
+    }
   }
 }
 
-constant _parse-json<c>: zonk(c, json) {
-  branch(
-    _parse-null,
-    branch(
-      _parse-bool,
-      branch(
-        _parse-object,
-        branch(
-          _parse-string,
-          branch(
-            _parse-number,
-            _parse-array,
-          ),
-        ),
-      ),
-    ),
-  )
+constant _parse-json: zonk(json) {
+  (k) =>> {
+    // Dispatch on the first rune instead of trying every JSON form through
+    // `branch`. This removes several failed `chunk`/`memcmp` calls per value.
+    try r = look-ahead(any-rune)(k);
+    if eq-rune(r, `n`) {
+      _parse-null(k)
+    } else-if or::(eq-rune(r, `t`), eq-rune(r, `f`)) {
+      _parse-bool(k)
+    } else-if eq-rune(r, `{`) {
+      _parse-object(k)
+    } else-if eq-rune(r, `"`) {
+      _parse-string(k)
+    } else-if eq-rune(r, `[`) {
+      _parse-array(k)
+    } else {
+      _parse-number(k)
+    }
+  }
 }
 
-define parse-json<c>(k: &zonk-kit(c)) -> either(parse-error, json) {
-  let p: zonk(c, json) =
-    (k) => {
+define parse-json(k: &zonk-kit) ->> either(parse-error, json) {
+  let p: zonk(json) =
+    (k) =>> {
       try _ = _skip-space(k);
       try json = _parse-json(k);
       try _ = end-of-input(k);
@@ -280,7 +377,7 @@ define parse-json<c>(k: &zonk-kit(c)) -> either(parse-error, json) {
   match p(k) {
   | Right(v) =>
     Right(v)
-  | Left(e) =>
-    Left(make-parse-error(k, e))
+  | Left(_) =>
+    Left(make-parse-error(k))
   }
 }

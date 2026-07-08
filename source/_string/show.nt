@@ -1,8 +1,8 @@
 import {
-  core.list {append},
-  core.rune,
-  core.string {byte-length, join},
-  core.string.unsafe {get-rune-unchecked, slice-N},
+  core::list {append},
+  core::rune,
+  core::string {byte-length, join},
+  core::string.unsafe {get-rune-unchecked, slice-N},
 }
 
 define _hex-digit(x: int) -> &string {
@@ -43,7 +43,7 @@ define _hex-digit(x: int) -> &string {
 }
 
 define _show-hex-byte(x: int) -> string {
-  join(List[
+  join(List::[
     *_hex-digit(div-int(x, 16)),
     *_hex-digit(rem-int(x, 16)),
   ])
@@ -55,7 +55,7 @@ define _quote-string(haystack: &string) -> list(string) {
     define loop(pivot: int, cursor: int) -> list(string) {
       let index = add-int(pivot, cursor);
       if ge-int(index, len) {
-        List[slice-N(haystack, pivot, cursor)]
+        List::[slice-N(haystack, pivot, cursor)]
       } else {
         let f =
           (escaped-string: string) => {
@@ -81,9 +81,9 @@ define _quote-string(haystack: &string) -> list(string) {
           f(*"\\\\")
         | _ =>
           if le-rune(r, `\u{1F}`) {
-            f(join(List[*"\\u00", _show-hex-byte(core.rune.to-int(r))]))
+            f(join(List::[*"\\u00", _show-hex-byte(core::rune.to-int(r))]))
           } else {
-            loop(pivot, add-int(cursor, core.rune.size(r)))
+            loop(pivot, add-int(cursor, core::rune.size(r)))
           }
         }
       }
@@ -93,7 +93,7 @@ define _quote-string(haystack: &string) -> list(string) {
 
 define show-json-string(t: string) -> string {
   pin t = t;
-  join(Cons(*"\"", append(_quote-string(t), List[*"\""])))
+  join(Cons(*"\"", append(_quote-string(t), List::[*"\""])))
 }
 
 define show-json-string-without-quote(t: &string) -> string {

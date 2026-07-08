@@ -1,71 +1,233 @@
 import {
-  core.eq.generic {eq-data},
-  noa.check {check},
-  noa.gen.string {string-gen},
-  noa.noa-kit {make-default-noa-kit},
-  noa.test {test},
-  this._string.parse {parse-json-string},
-  this._string.show {show-json-string-without-quote},
-  this.data {json},
-  this.gen {json-gen},
-  this.parse {parse-json},
-  this.show {show-json},
-  zonk.parse {make-zonk-kit},
+  noa::gen.generic {derive},
+  noa::suite {make-default-noa-kit},
+  noa::suite.spec {check, example, property},
+  zonk::parse {make-zonk-kit},
+  _string.parse {parse-json-string},
+  _string.show {show-json-string-without-quote},
+  data {Array, Bool, Float, Integer, Null, Object, Text, empty-object, insert, json, json-array-from-list, lookup, object},
+  gen {json-gen},
+  parse {parse-json},
+  show {show-json},
+}
+
+define _parses-as(source: &string, expected: json) -> bool {
+  pin k = make-zonk-kit(*source);
+  match parse-json(k) {
+  | Left(_) =>
+    False
+  | Right(actual) =>
+    pin actual = show-json(actual);
+    pin expected = show-json(expected);
+    eq-string(actual, expected)
+  }
+}
+
+define _rejects-json(source: &string) -> bool {
+  pin k = make-zonk-kit(*source);
+  match parse-json(k) {
+  | Left(_) =>
+    True
+  | Right(_) =>
+    False
+  }
+}
+
+define _unquotes-as(source: &string, expected: &string) -> bool {
+  match parse-json-string(source) {
+  | Left(_) =>
+    False
+  | Right(actual) =>
+    pin actual = actual;
+    eq-string(actual, expected)
+  }
+}
+
+define _rejects-json-string(source: &string) -> bool {
+  match parse-json-string(source) {
+  | Left(_) =>
+    True
+  | Right(_) =>
+    False
+  }
+}
+
+define _object-with-two-entries() -> object(json) {
+  let empty: object(json) = empty-object();
+  let with-empty-key = insert(empty, *"", Null);
+  insert(with-empty-key, *"a", Array(json-array-from-list(List::[Integer(1)])))
+}
+
+define _object-with-last-value() -> object(json) {
+  let empty: object(json) = empty-object();
+  let first = insert(empty, *"key", Integer(1));
+  insert(first, *"key", Integer(2))
+}
+
+define _last-object-value-is-used() -> bool {
+  pin k = make-zonk-kit(*"{\"key\":1,\"key\":2}");
+  match parse-json(k) {
+  | Right(Object(kvs)) =>
+    pin kvs = kvs;
+    pin key = *"key";
+    match lookup(kvs, key) {
+    | Right(value) =>
+      match *value {
+      | Integer(value) =>
+        eq-int(value, 2)
+      | _ =>
+        False
+      }
+    | _ =>
+      False
+    }
+  | _ =>
+    False
+  }
 }
 
 define main() -> unit {
   pin k = make-default-noa-kit();
-  test(
+  check(
     k,
-    "JSON Unicode escape accepts four hexadecimal digits without a 0x prefix",
-    () => {
-      match parse-json-string("\\u001e") {
-      | Left(_) =>
-        False
-      | Right(t) =>
-        pin t = t;
-        pin q = show-json-string-without-quote(t);
-        eq-string(q, "\\u001e")
-      }
-    },
-  );
-  check::(
-    k,
-    "∀ (t: string). quote(parse(quote(t))) == quote(t)",
-    string-gen,
-    (t: string) => {
-      pin t = t;
-      pin t-without-quote = show-json-string-without-quote(t);
-      match parse-json-string(t-without-quote) {
-      | Left(_) =>
-        False
-      | Right(t2) =>
-        pin t2 = t2;
-        pin t3 = show-json-string-without-quote(t2);
-        eq-string(t-without-quote, t3)
-      }
-    },
-  );
-  check::(
-    k,
-    "∀ (j: json). show(parse(show(j))) == show(j)",
-    json-gen,
-    (j: json) => {
-      pin json-txt = show-json(j);
-      pin k = make-zonk-kit(*json-txt, Unit);
-      match parse-json(k) {
-      | Right(j) =>
-        pin new-json-txt = show-json(j);
-        eq-data::(json-txt, new-json-txt)
-      | Left(_) =>
-        False
-      }
-    },
+    List::[
+      example::(
+        "JSON Unicode escape accepts four hexadecimal digits without a 0x prefix",
+        {
+          match parse-json-string("\\u001e") {
+          | Left(_) =>
+            False
+          | Right(t) =>
+            pin t = t;
+            pin q = show-json-string-without-quote(t);
+            eq-string(q, "\\u001e")
+          }
+        },
+      ),
+      example::(
+        "JSON strings decode every standard escape",
+        _unquotes-as("\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0041", "\"\\/\u{8}\u{C}\n\r\tA"),
+      ),
+      example::(
+        "JSON permits RFC whitespace around nested values",
+        _parses-as(
+          " \t\r\n[ null, true, false, \"x\", -12, 3.5, 6e2 ] \r\n",
+          Array(json-array-from-list(List::[Null, Bool(True), Bool(False), Text(*"x"), Integer(-12), Float(3.5), Float(600.0)])),
+        ),
+      ),
+      example::(
+        "JSON objects preserve empty keys and nested arrays",
+        _parses-as("{\"\":null,\"a\":[1]}", Object(_object-with-two-entries())),
+      ),
+      example::(
+        "duplicate object keys preserve their input order",
+        _parses-as("{\"key\":1,\"key\":2}", Object(_object-with-last-value())),
+      ),
+      example::(
+        "object lookup uses the last duplicate value",
+        _last-object-value-is-used(),
+      ),
+      example::(
+        "escaped object keys and values decode",
+        _parses-as(
+          "{\"a\\u0062\":\"line\\n\\t\\\"\\\\\\/\"}",
+          Object(insert(empty-object(), *"ab", Text(*"line\n\t\"\\/"))),
+        ),
+      ),
+      example::(
+        "array trailing comma is rejected",
+        _rejects-json("[1,]"),
+      ),
+      example::(
+        "object trailing comma is rejected",
+        _rejects-json("{\"a\":1,}"),
+      ),
+      example::(
+        "object member without colon is rejected",
+        _rejects-json("{\"a\" 1}"),
+      ),
+      example::(
+        "keyword suffix is rejected",
+        _rejects-json("truex"),
+      ),
+      example::(
+        "unterminated array is rejected",
+        _rejects-json("[1"),
+      ),
+      example::(
+        "leading plus number is rejected",
+        _rejects-json("+1"),
+      ),
+      example::(
+        "leading-zero number is rejected",
+        _rejects-json("01"),
+      ),
+      example::(
+        "fraction without digits after dot is rejected",
+        _rejects-json("1."),
+      ),
+      example::(
+        "fraction without digits before dot is rejected",
+        _rejects-json(".1"),
+      ),
+      example::(
+        "incomplete exponent is rejected",
+        _rejects-json("1e"),
+      ),
+      example::(
+        "double-sign number is rejected",
+        _rejects-json("--1"),
+      ),
+      example::(
+        "invalid JSON string escapes are rejected",
+        and::(
+          _rejects-json-string("\\x"),
+          and::(_rejects-json-string("\\u12"), _rejects-json-string("\\u12x4")),
+        ),
+      ),
+      example::(
+        "unescaped control characters in JSON strings are rejected",
+        and::(
+          _rejects-json("\"line\nbreak\""),
+          _rejects-json("\"column\tbreak\""),
+        ),
+      ),
+      property::(
+        "∀ (t: string). quote(parse(quote(t))) == quote(t)",
+        derive::(),
+        (t: &string) => {
+          pin t-without-quote = show-json-string-without-quote(t);
+          match parse-json-string(t-without-quote) {
+          | Left(_) =>
+            False
+          | Right(t2) =>
+            pin t2 = t2;
+            pin t3 = show-json-string-without-quote(t2);
+            eq-string(t-without-quote, t3)
+          }
+        },
+      ),
+      property::(
+        "∀ (j: json). show(parse(show(j))) == show(j)",
+        json-gen,
+        (j: &json) => {
+          pin json-txt = show-json(*j);
+          pin k = make-zonk-kit(*json-txt);
+          match parse-json(k) {
+          | Right(j) =>
+            pin new-json-txt = show-json(j);
+            eq-string(json-txt, new-json-txt)
+          | Left(_) =>
+            False
+          }
+        },
+      ),
+    ],
   )
 }
 
 define zen() -> unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}", Unit);
+  pin k = make-zonk-kit(*" {\"key\" : 1234}");
   match parse-json(k) {
   | Right(j) =>
     pin j = show-json(j);

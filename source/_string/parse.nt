@@ -1,8 +1,9 @@
 import {
-  core.int.show {show-int},
-  core.list {concat, for-each-E, for-each-EN, intercalate},
-  core.rune,
-  core.string {drop, format, singleton, split, take-N},
+  core::int.show {show-int},
+  core::rune,
+  core::string {byte-length, format, singleton},
+  core::string.builder {append-rune-UTF8, extract, make-string-builder, string-builder},
+  core::string.unsafe {get-rune-unchecked},
 }
 
 data error {
@@ -10,90 +11,142 @@ data error {
 }
 
 define is-hex-digit(r: rune) -> bool {
-  if and(le-rune(`0`, r), le-rune(r, `9`)) {
+  if and::(le-rune(`0`, r), le-rune(r, `9`)) {
     True
-  } else-if and(le-rune(`a`, r), le-rune(r, `f`)) {
+  } else-if and::(le-rune(`a`, r), le-rune(r, `f`)) {
     True
   } else {
-    and(le-rune(`A`, r), le-rune(r, `F`))
+    and::(le-rune(`A`, r), le-rune(r, `F`))
   }
 }
 
 define hex-digit-value(r: rune) -> int {
-  if and(le-rune(`0`, r), le-rune(r, `9`)) {
-    sub-int(core.rune.to-int(r), core.rune.to-int(`0`))
-  } else-if and(le-rune(`a`, r), le-rune(r, `f`)) {
-    add-int(10, sub-int(core.rune.to-int(r), core.rune.to-int(`a`)))
+  if and::(le-rune(`0`, r), le-rune(r, `9`)) {
+    sub-int(core::rune.to-int(r), core::rune.to-int(`0`))
+  } else-if and::(le-rune(`a`, r), le-rune(r, `f`)) {
+    add-int(10, sub-int(core::rune.to-int(r), core::rune.to-int(`a`)))
   } else {
-    add-int(10, sub-int(core.rune.to-int(r), core.rune.to-int(`A`)))
+    add-int(10, sub-int(core::rune.to-int(r), core::rune.to-int(`A`)))
   }
 }
 
-define parse-hex-digits(t: string, acc: int) -> int {
-  match core.string.uncons(t) {
-  | Left(_) =>
-    acc
-  | Right(Pair(r, rest)) =>
-    parse-hex-digits(rest, add-int(mul-int(acc, 16), hex-digit-value(r)))
-  }
-}
-
-define unquote-string(t: string) -> either(error, list(string)) {
-  match core.string.uncons(t) {
-  | Left(_) =>
-    Right(List[*"\\"])
-  | Right(Pair(c, rest)) =>
-    if eq-rune(c, `b`) {
-      Right(List[*"\u{8}", rest])
-    } else-if eq-rune(c, `t`) {
-      Right(List[*"\u{9}", rest])
-    } else-if eq-rune(c, `n`) {
-      Right(List[*"\u{A}", rest])
-    } else-if eq-rune(c, `f`) {
-      Right(List[*"\u{C}", rest])
-    } else-if eq-rune(c, `r`) {
-      Right(List[*"\u{D}", rest])
-    } else-if eq-rune(c, `"`) {
-      Right(List[*"\u{22}", rest])
-    } else-if eq-rune(c, `/`) {
-      Right(List[*"\u{2F}", rest])
-    } else-if eq-rune(c, `\\`) {
-      Right(List[*"\u{5C}", rest])
-    } else-if eq-rune(c, `u`) {
-      let scalar-value-string on rest = take-N(rest, 4);
-      let len on scalar-value-string = core.string.length(scalar-value-string);
-      pin scalar-value-string = scalar-value-string;
-      if and(eq-int(len, 4), core.string.all(scalar-value-string, is-hex-digit)) {
-        let v = parse-hex-digits(*scalar-value-string, 0);
-        match core.rune.from-int(v) {
-        | Left(_) =>
-          Left(JSON-String-Error(format("The value `{}` is outside the Unicode codespace", List[show-int(v)])))
-        | Right(r) =>
-          let rest = drop(rest, 4);
-          Right(List[singleton(r), rest])
-        }
-      } else {
-        Left(JSON-String-Error(format("Expected 4-digit Unicode codepoint, but got: {}", List[*scalar-value-string])))
-      }
+define _parse-unicode-escape(t: &string, index: int, len: int) ->> either(error, pair(rune, int)) {
+  if gt-int(add-int(index, 4), len) {
+    Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
+  } else {
+    let r1 = get-rune-unchecked(t, index);
+    if not(is-hex-digit(r1)) {
+      Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
     } else {
-      Left(JSON-String-Error(format("Unknown escape sequence: \\{}", List[singleton(c)])))
+      let r2 = get-rune-unchecked(t, add-int(index, 1));
+      if not(is-hex-digit(r2)) {
+        Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
+      } else {
+        let r3 = get-rune-unchecked(t, add-int(index, 2));
+        if not(is-hex-digit(r3)) {
+          Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
+        } else {
+          let r4 = get-rune-unchecked(t, add-int(index, 3));
+          if not(is-hex-digit(r4)) {
+            Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
+          } else {
+            let v = add-int(
+              mul-int(hex-digit-value(r1), 4096),
+              add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
+            );
+            match core::rune.from-int(v) {
+            | Left(_) =>
+              Left(JSON-String-Error(format("The value `{}` is outside the Unicode codespace", List::[show-int(v)])))
+            | Right(r) =>
+              Right(Pair(r, add-int(index, 4)))
+            }
+          }
+        }
+      }
     }
   }
 }
 
-define parse-json-string-fragment(t: &string) -> either(error, list(string)) {
-  match split(t, "\\") {
-  | Nil =>
-    // unreachable
-    Left(JSON-String-Error(*"json.string.parse._parse-json-string-fragment"))
-  | Cons(t, ts) =>
-    try fragment-lists = for-each-E(ts, unquote-string);
-    Right(Cons(t, concat(fragment-lists)))
+define _append-escape(b: &string-builder, t: &string, index: int, len: int) ->> either(error, int) {
+  if ge-int(index, len) {
+    append-rune-UTF8(b, `\\`);
+    Right(index)
+  } else {
+    let c = get-rune-unchecked(t, index);
+    if eq-rune(c, `b`) {
+      append-rune-UTF8(b, `\u{8}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `t`) {
+      append-rune-UTF8(b, `\u{9}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `n`) {
+      append-rune-UTF8(b, `\u{A}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `f`) {
+      append-rune-UTF8(b, `\u{C}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `r`) {
+      append-rune-UTF8(b, `\u{D}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `"`) {
+      append-rune-UTF8(b, `\u{22}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `/`) {
+      append-rune-UTF8(b, `\u{2F}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `\\`) {
+      append-rune-UTF8(b, `\u{5C}`);
+      Right(add-int(index, 1))
+    } else-if eq-rune(c, `u`) {
+      try Pair(r, next-index) = _parse-unicode-escape(t, add-int(index, 1), len);
+      append-rune-UTF8(b, r);
+      Right(next-index)
+    } else {
+      Left(JSON-String-Error(format("Unknown escape sequence: \\{}", List::[singleton(c)])))
+    }
   }
 }
 
-define parse-json-string(t: &string) -> either(error, string) {
-  pin ts = split(t, "\\\\");
-  try tss = for-each-EN(ts, parse-json-string-fragment);
-  Right(core.string.join(core.list.concat(intercalate(tss, List[*"\\"]))))
+define _has-escape(t: &string, index: int, len: int) -> bool {
+  if ge-int(index, len) {
+    False
+  } else {
+    let r = get-rune-unchecked(t, index);
+    if eq-rune(r, `\\`) {
+      True
+    } else {
+      _has-escape(t, add-int(index, core::rune.size(r)), len)
+    }
+  }
+}
+
+define _parse-json-string-into(b: &string-builder, t: &string, index: int, len: int) ->> either(error, unit) {
+  if ge-int(index, len) {
+    Right(Unit)
+  } else {
+    let r = get-rune-unchecked(t, index);
+    if eq-rune(r, `\\`) {
+      try next-index = _append-escape(b, t, add-int(index, 1), len);
+      _parse-json-string-into(b, t, next-index, len)
+    } else {
+      append-rune-UTF8(b, r);
+      _parse-json-string-into(b, t, add-int(index, core::rune.size(r)), len)
+    }
+  }
+}
+
+define parse-json-string(t: &string) ->> either(error, string) {
+  let len = byte-length(t);
+  if _has-escape(t, 0, len) {
+    let b = make-string-builder(len);
+    let result on b = _parse-json-string-into(b, t, 0, len);
+    match result {
+    | Left(e) =>
+      Left(e)
+    | Right(_) =>
+      Right(extract(b))
+    }
+  } else {
+    Right(*t)
+  }
 }

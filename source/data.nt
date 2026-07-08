@@ -1,9 +1,9 @@
 import {
-  core.dictionary {dictionary},
+  core::array {access, length, make, push-back, to-list},
 }
 
 alias object(a) {
-  dictionary(string, a)
+  array(pair(string, a))
 }
 
 data json {
@@ -13,18 +13,80 @@ data json {
 | Float(float)
 | Text(string)
 | Object(object(json))
-| Array(list(json))
+| Array(array(json))
 }
 
-define insert(kvs: object(json), key: string, value: json) -> object(json) {
-  pin k = core.string.ord.as-ord;
-  core.dictionary.insert(k, kvs, key, value)
+define empty-object<a>() -> object(a) {
+  make::(0)
 }
 
-define lookup(k: &ord(string), kvs: &object(json), key: &string) ->> ?&json {
-  core.dictionary.lookup(k, kvs, key)
+define make-object<a>() -> object(a) {
+  make::(8)
 }
 
-define delete(k: &ord(string), kvs: object(json), key: string) -> object(json) {
-  core.dictionary.delete(k, kvs, key)
+define empty-json-array() -> array(json) {
+  make::(8)
+}
+
+inline append-json-array(xs: array(json), x: json) -> array(json) {
+  push-back(xs, x)
+}
+
+define json-array-from-list(xs: list(json)) -> array(json) {
+  let f =
+    define loop(ys: list(json), acc: array(json)) -> array(json) {
+      match ys {
+      | Nil =>
+        acc
+      | Cons(y, ys) =>
+        loop(ys, append-json-array(acc, y))
+      }
+    };
+  f(xs, empty-json-array())
+}
+
+define insert<a>(kvs: object(a), key: string, value: a) -> object(a) {
+  push-back(kvs, Pair(key, value))
+}
+
+define lookup<a>(kvs: &object(a), key: &string) ->> ?&a {
+  let f =
+    define self(index: int) ->> ?&a {
+      if lt-int(index, 0) {
+        none
+      } else {
+        match access(kvs, index) {
+        | Left(_) =>
+          none
+        | Right(entry) =>
+          tie Pair(entry-key, value) = entry;
+          if eq-string(entry-key, key) {
+            Right(value)
+          } else {
+            self(sub-int(index, 1))
+          }
+        }
+      }
+    };
+  f(sub-int(length(kvs), 1))
+}
+
+define delete(kvs: object(json), key: string) -> object(json) {
+  pin key = key;
+  let f =
+    define loop(entries: list(pair(string, json)), acc: object(json)) -> object(json) {
+      match entries {
+      | Nil =>
+        acc
+      | Cons(entry, rest) =>
+        let Pair(entry-key, value) = entry;
+        pin entry-key = entry-key;
+        if eq-string(entry-key, key) {
+          loop(rest, acc)
+        } else {
+          loop(rest, insert(acc, *entry-key, value))
+        }
+      }
+    };
+  f(to-list(kvs), empty-object())
 }

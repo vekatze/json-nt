@@ -1,12 +1,12 @@
 import {
-  core.dictionary,
-  core.float.show {show-float},
-  core.int.show {show-int},
-  core.list {append, for-each, intercalate},
-  core.list.show,
-  core.string {join},
-  this._string.show {show-json-string},
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
+  core::array,
+  core::float.show {show-float},
+  core::int.show {show-int},
+  core::list {append, for-each, intercalate},
+  core::list.show,
+  core::string {join},
+  _string.show {show-json-string},
+  data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
 }
 
 nominal {
@@ -24,19 +24,19 @@ constant as-show: show(json) {
 }
 
 constant list-json: show(list(json)) {
-  core.list.show.as-show(as-show)
+  core::list.show.as-show(as-show)
 }
 
 define _show-object(kvs: object(json)) -> string {
-  let kvs = core.dictionary.to-list(kvs);
+  let kvs = core::array.to-list(kvs);
   let kvs =
     for-each(kvs, (kv) => {
       let Pair(k, v) = kv;
       let k = show-json-string(k);
       let v = show-json(v);
-      join(List[k, *": ", v])
+      join(List::[k, *": ", v])
     });
-  join(Cons(*"{", append(intercalate(kvs, *", "), List[*"}"])))
+  join(Cons(*"{", append(intercalate(kvs, *", "), List::[*"}"])))
 }
 
 define show-json(j: json) -> string {
@@ -52,13 +52,14 @@ define show-json(j: json) -> string {
   | Integer(i) =>
     show-int(i)
   | Float(x) =>
-    show-float(x, 6)
+    show-float(x)
   | Text(x) =>
     show-json-string(x)
   | Object(kvs) =>
     _show-object(kvs)
   | Array(xs) =>
     let Show{render} = list-json;
+    let xs = core::array.to-list(xs);
     pin xs = xs;
     render(xs)
   }

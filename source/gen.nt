@@ -1,88 +1,98 @@
 import {
-  core.dictionary,
-  core.list {for-each},
-  core.random {random-in-range-int},
-  noa.gen {Gen, gen},
-  noa.gen.bool {bool-gen},
-  noa.gen.float {float-gen},
-  noa.gen.int {int-gen},
-  noa.gen.list {list-gen},
-  noa.gen.pair {pair-gen},
-  noa.gen.string {string-gen},
-  this.data {Array, Bool, Float, Integer, Null, Object, Text, json},
+  core::string {pack},
+  noa::control {Control-Success, control, control-bind},
+  noa::gen {Gen, apply, gen, gen-bind, gen-map},
+  noa::gen.float {gen-float},
+  noa::gen.int {gen-int},
+  noa::gen.list {gen-list},
+  noa::suite {gen-kit},
+  noa::suite.combinator {choose, scope},
+  data {Array, Bool, Float, Integer, Null, Object, Text, empty-object, insert, json, json-array-from-list, object},
 }
 
 nominal {
   constant json-gen: gen(json),
 }
 
-define json-list-gen() -> gen(list(json)) {
-  list-gen(json-gen)
+constant _int-gen: gen(int) {
+  gen-int(-1000000, 1000000, 0)
 }
 
-define kvs-list-gen() -> gen(list(pair(string, json))) {
-  list-gen(pair-gen(string-gen, json-gen))
+constant _float-gen: gen(float) {
+  gen-float(-1000000.0, 1000000.0, 0.0)
+}
+
+constant _rune-gen: gen(rune) {
+  gen-map(gen-int(0, 126, 0), (code) => {
+    magic cast(int, rune, code)
+  })
+}
+
+define _string-gen() -> gen(string) {
+  gen-map(gen-list(_rune-gen), (rs) => {
+    pin rs = rs;
+    pack(rs)
+  })
+}
+
+define _object-entry-gen() -> gen(pair(string, json)) {
+  gen-bind(_string-gen(), (key) => {
+    gen-map(json-gen, (value) => {
+      Pair(key, value)
+    })
+  })
+}
+
+define _object-from-entries(entries: list(pair(string, json))) -> object(json) {
+  let f =
+    define loop(entries: list(pair(string, json)), acc: object(json)) -> object(json) {
+      match entries {
+      | Nil =>
+        acc
+      | Cons(entry, rest) =>
+        let Pair(key, value) = entry;
+        loop(rest, insert(acc, key, value))
+      }
+    };
+  f(entries, empty-object())
+}
+
+define _generate-json(k: &gen-kit) ->> control(json, json) {
+  scope<json, json>(k, (k) =>> {
+    with control-bind {
+      bind tag = choose<json>(k, 7);
+      match tag {
+      | 0 =>
+        Control-Success(Null)
+      | 1 =>
+        bind b = choose<json>(k, 2);
+        Control-Success(Bool(eq-int(b, 1)))
+      | 2 =>
+        bind i = apply(_int-gen, k);
+        Control-Success(Integer(i))
+      | 3 =>
+        bind x = apply(_float-gen, k);
+        Control-Success(Float(x))
+      | 4 =>
+        bind t = apply(_string-gen(), k);
+        Control-Success(Text(t))
+      | 5 =>
+        bind xs = apply(gen-list(json-gen), k);
+        Control-Success(Array(json-array-from-list(xs)))
+      | _ =>
+        bind entries = apply(gen-list(_object-entry-gen()), k);
+        Control-Success(Object(_object-from-entries(entries)))
+      }
+    }
+  })
 }
 
 constant json-gen: gen(json) {
-  Gen{
-    generate := {
-      (size: int) => {
-        let dice = random-in-range-int(0, 6);
-        if eq-int(dice, 0) {
-          Null
-        } else-if eq-int(dice, 1) {
-          let Gen{generate} = bool-gen;
-          Bool(generate(size))
-        } else-if eq-int(dice, 2) {
-          let Gen{generate} = int-gen;
-          Integer(generate(size))
-        } else-if eq-int(dice, 3) {
-          let Gen{generate} = float-gen;
-          Float(generate(size))
-        } else-if eq-int(dice, 4) {
-          let Gen{generate} = string-gen;
-          Text(generate(size))
-        } else-if eq-int(dice, 5) {
-          let size = div-int(size, 2);
-          let Gen{generate} = kvs-list-gen();
-          pin k = core.string.ord.as-ord;
-          Object(core.dictionary.from-list(k, generate(size)))
-        } else {
-          let size = div-int(size, 2);
-          let Gen{generate} = json-list-gen();
-          Array(generate(size))
-        }
-      }
+  Gen(
+    <r>(k: &gen-kit) =>> {
+      scope<r, json>(k, (k) =>> {
+        _generate-json(k)
+      })
     },
-    shrink := {
-      (j: json) => {
-        match j {
-        | Null =>
-          List[]
-        | Bool(b) =>
-          let Gen{shrink} = bool-gen;
-          for-each(shrink(b), Bool)
-        | Integer(x) =>
-          let Gen{shrink} = int-gen;
-          for-each(shrink(x), Integer)
-        | Float(x) =>
-          let Gen{shrink} = float-gen;
-          for-each(shrink(x), Float)
-        | Text(x) =>
-          let Gen{shrink} = string-gen;
-          for-each(shrink(x), Text)
-        | Object(kvs) =>
-          let Gen{shrink} = kvs-list-gen();
-          pin k = core.string.ord.as-ord;
-          for-each(shrink(core.dictionary.to-list(kvs)), (kvs) => {
-            Object(core.dictionary.from-list(k, kvs))
-          })
-        | Array(xs) =>
-          let Gen{shrink} = json-list-gen();
-          for-each(shrink(xs), Array)
-        }
-      }
-    },
-  }
+  )
 }
