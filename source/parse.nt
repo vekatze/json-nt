@@ -13,8 +13,8 @@ import {
     chunk,
     drop-while,
     end-of-input,
-    make-parse-error,
     look-ahead,
+    make-parse-error,
     optional,
     parse-error,
     parsed,
@@ -24,8 +24,23 @@ import {
     zonk,
     zonk-kit,
   },
-  _string.parse {hex-digit-value, is-hex-digit},
-  data {Array, Bool, Float, Integer, Null, Object, Text, append-json-array, empty-json-array, empty-object, insert, json, make-object, object},
+  this::_string.parse {hex-digit-value, is-hex-digit},
+  this::data {
+    Array,
+    Bool,
+    Float,
+    Integer,
+    Null,
+    Object,
+    Text,
+    append-json-array,
+    empty-json-array,
+    empty-object,
+    insert,
+    json,
+    make-object,
+    object,
+  },
 }
 
 define _is-space(r: rune) -> bool {
@@ -123,7 +138,7 @@ define _interpret-number(t: &string) ->> ?json {
   if _has-leading-zero(t) {
     none
   } else {
-    let is-integer = core::string.all(t, _is-integer-rune);
+    let is-integer = core::string::all(t, _is-integer-rune);
     if is-integer {
       match parse-int(t) {
       | Right(num) =>
@@ -177,10 +192,11 @@ define _parse-unicode-escape(b: &string-builder, k: &zonk-kit) ->> parsed(unit) 
   try r3 = any-rune(k);
   try r4 = any-rune(k);
   if and::(is-hex-digit(r1), and::(is-hex-digit(r2), and::(is-hex-digit(r3), is-hex-digit(r4)))) {
-    let value = add-int(
-      mul-int(hex-digit-value(r1), 4096),
-      add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
-    );
+    let value =
+      add-int(
+        mul-int(hex-digit-value(r1), 4096),
+        add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
+      );
     match from-int(value) {
     | Right(r) =>
       append-rune-UTF8(b, r);

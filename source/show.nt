@@ -1,12 +1,11 @@
 import {
-  core::array,
   core::float.show {show-float},
   core::int.show {show-int},
   core::list {append, for-each, intercalate},
   core::list.show,
   core::string {join},
-  _string.show {show-json-string},
-  data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
+  this::_string.show {show-json-string},
+  this::data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
 }
 
 nominal {
@@ -24,11 +23,11 @@ constant as-show: show(json) {
 }
 
 constant list-json: show(list(json)) {
-  core::list.show.as-show(as-show)
+  core::list.show::as-show(as-show)
 }
 
 define _show-object(kvs: object(json)) -> string {
-  let kvs = core::array.to-list(kvs);
+  let kvs = core::array::to-list(kvs);
   let kvs =
     for-each(kvs, (kv) => {
       let Pair(k, v) = kv;
@@ -59,7 +58,7 @@ define show-json(j: json) -> string {
     _show-object(kvs)
   | Array(xs) =>
     let Show{render} = list-json;
-    let xs = core::array.to-list(xs);
+    let xs = core::array::to-list(xs);
     pin xs = xs;
     render(xs)
   }

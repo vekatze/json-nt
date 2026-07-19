@@ -7,7 +7,7 @@ import {
   noa::gen.list {gen-list},
   noa::suite {gen-kit},
   noa::suite.combinator {choose, scope},
-  data {Array, Bool, Float, Integer, Null, Object, Text, empty-object, insert, json, json-array-from-list, object},
+  this::data {Array, Bool, Float, Integer, Null, Object, Text, empty-object, insert, json, json-array-from-list, object},
 }
 
 nominal {

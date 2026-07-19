@@ -1,5 +1,5 @@
 import {
-  _string.parse {JSON-String-Error, parse-json-string},
+  this::_string.parse {JSON-String-Error, parse-json-string},
 }
 
 define zen() -> unit {

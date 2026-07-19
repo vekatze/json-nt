@@ -22,11 +22,11 @@ define is-hex-digit(r: rune) -> bool {
 
 define hex-digit-value(r: rune) -> int {
   if and::(le-rune(`0`, r), le-rune(r, `9`)) {
-    sub-int(core::rune.to-int(r), core::rune.to-int(`0`))
+    sub-int(core::rune::to-int(r), core::rune::to-int(`0`))
   } else-if and::(le-rune(`a`, r), le-rune(r, `f`)) {
-    add-int(10, sub-int(core::rune.to-int(r), core::rune.to-int(`a`)))
+    add-int(10, sub-int(core::rune::to-int(r), core::rune::to-int(`a`)))
   } else {
-    add-int(10, sub-int(core::rune.to-int(r), core::rune.to-int(`A`)))
+    add-int(10, sub-int(core::rune::to-int(r), core::rune::to-int(`A`)))
   }
 }
 
@@ -50,11 +50,12 @@ define _parse-unicode-escape(t: &string, index: int, len: int) ->> either(error,
           if not(is-hex-digit(r4)) {
             Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
           } else {
-            let v = add-int(
-              mul-int(hex-digit-value(r1), 4096),
-              add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
-            );
-            match core::rune.from-int(v) {
+            let v =
+              add-int(
+                mul-int(hex-digit-value(r1), 4096),
+                add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
+              );
+            match core::rune::from-int(v) {
             | Left(_) =>
               Left(JSON-String-Error(format("The value `{}` is outside the Unicode codespace", List::[show-int(v)])))
             | Right(r) =>
@@ -115,7 +116,7 @@ define _has-escape(t: &string, index: int, len: int) -> bool {
     if eq-rune(r, `\\`) {
       True
     } else {
-      _has-escape(t, add-int(index, core::rune.size(r)), len)
+      _has-escape(t, add-int(index, core::rune::size(r)), len)
     }
   }
 }
@@ -130,7 +131,7 @@ define _parse-json-string-into(b: &string-builder, t: &string, index: int, len: 
       _parse-json-string-into(b, t, next-index, len)
     } else {
       append-rune-UTF8(b, r);
-      _parse-json-string-into(b, t, add-int(index, core::rune.size(r)), len)
+      _parse-json-string-into(b, t, add-int(index, core::rune::size(r)), len)
     }
   }
 }

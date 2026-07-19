@@ -81,9 +81,9 @@ define _quote-string(haystack: &string) -> list(string) {
           f(*"\\\\")
         | _ =>
           if le-rune(r, `\u{1F}`) {
-            f(join(List::[*"\\u00", _show-hex-byte(core::rune.to-int(r))]))
+            f(join(List::[*"\\u00", _show-hex-byte(core::rune::to-int(r))]))
           } else {
-            loop(pivot, add-int(cursor, core::rune.size(r)))
+            loop(pivot, add-int(cursor, core::rune::size(r)))
           }
         }
       }
