@@ -30,7 +30,7 @@ define hex-digit-value(r: rune) -> int {
   }
 }
 
-define _parse-unicode-escape(t: &string, index: int, len: int) ->> either(error, pair(rune, int)) {
+define _parse-unicode-escape@(t: &string, index: int, len: int) -> either(error, pair(rune, int)) {
   if gt-int(add-int(index, 4), len) {
     Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
   } else {
@@ -55,7 +55,7 @@ define _parse-unicode-escape(t: &string, index: int, len: int) ->> either(error,
                 mul-int(hex-digit-value(r1), 4096),
                 add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
               );
-            match core::rune::from-int(v) {
+            match core::rune::from-int@(v) {
             | Left(_) =>
               Left(JSON-String-Error(format("The value `{}` is outside the Unicode codespace", List::[show-int(v)])))
             | Right(r) =>
@@ -68,7 +68,7 @@ define _parse-unicode-escape(t: &string, index: int, len: int) ->> either(error,
   }
 }
 
-define _append-escape(b: &string-builder, t: &string, index: int, len: int) ->> either(error, int) {
+define _append-escape@(b: &string-builder, t: &string, index: int, len: int) -> either(error, int) {
   if ge-int(index, len) {
     append-rune-UTF8(b, `\\`);
     Right(index)
@@ -99,7 +99,7 @@ define _append-escape(b: &string-builder, t: &string, index: int, len: int) ->> 
       append-rune-UTF8(b, `\u{5C}`);
       Right(add-int(index, 1))
     } else-if eq-rune(c, `u`) {
-      try Pair(r, next-index) = _parse-unicode-escape(t, add-int(index, 1), len);
+      try Pair(r, next-index) = _parse-unicode-escape@(t, add-int(index, 1), len);
       append-rune-UTF8(b, r);
       Right(next-index)
     } else {
@@ -121,26 +121,26 @@ define _has-escape(t: &string, index: int, len: int) -> bool {
   }
 }
 
-define _parse-json-string-into(b: &string-builder, t: &string, index: int, len: int) ->> either(error, unit) {
+define _parse-json-string-into@(b: &string-builder, t: &string, index: int, len: int) -> either(error, unit) {
   if ge-int(index, len) {
     Right(Unit)
   } else {
     let r = get-rune-unchecked(t, index);
     if eq-rune(r, `\\`) {
-      try next-index = _append-escape(b, t, add-int(index, 1), len);
-      _parse-json-string-into(b, t, next-index, len)
+      try next-index = _append-escape@(b, t, add-int(index, 1), len);
+      _parse-json-string-into@(b, t, next-index, len)
     } else {
       append-rune-UTF8(b, r);
-      _parse-json-string-into(b, t, add-int(index, core::rune::size(r)), len)
+      _parse-json-string-into@(b, t, add-int(index, core::rune::size(r)), len)
     }
   }
 }
 
-define parse-json-string(t: &string) ->> either(error, string) {
+define parse-json-string@(t: &string) -> either(error, string) {
   let len = byte-length(t);
   if _has-escape(t, 0, len) {
     let b = make-string-builder(len);
-    let result on b = _parse-json-string-into(b, t, 0, len);
+    let result on b = _parse-json-string-into@(b, t, 0, len);
     match result {
     | Left(e) =>
       Left(e)

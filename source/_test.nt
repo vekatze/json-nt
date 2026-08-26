@@ -26,8 +26,8 @@ import {
 }
 
 define _parses-as(source: &string, expected: json) -> bool {
-  pin k = make-zonk-kit(*source);
-  match parse-json(k) {
+  pin k = make-zonk-kit@(*source);
+  match parse-json@(k) {
   | Left(_) =>
     False
   | Right(actual) =>
@@ -38,8 +38,8 @@ define _parses-as(source: &string, expected: json) -> bool {
 }
 
 define _rejects-json(source: &string) -> bool {
-  pin k = make-zonk-kit(*source);
-  match parse-json(k) {
+  pin k = make-zonk-kit@(*source);
+  match parse-json@(k) {
   | Left(_) =>
     True
   | Right(_) =>
@@ -48,7 +48,7 @@ define _rejects-json(source: &string) -> bool {
 }
 
 define _unquotes-as(source: &string, expected: &string) -> bool {
-  match parse-json-string(source) {
+  match parse-json-string@(source) {
   | Left(_) =>
     False
   | Right(actual) =>
@@ -58,7 +58,7 @@ define _unquotes-as(source: &string, expected: &string) -> bool {
 }
 
 define _rejects-json-string(source: &string) -> bool {
-  match parse-json-string(source) {
+  match parse-json-string@(source) {
   | Left(_) =>
     True
   | Right(_) =>
@@ -79,12 +79,12 @@ define _object-with-last-value() -> object(json) {
 }
 
 define _last-object-value-is-used() -> bool {
-  pin k = make-zonk-kit(*"{\"key\":1,\"key\":2}");
-  match parse-json(k) {
+  pin k = make-zonk-kit@(*"{\"key\":1,\"key\":2}");
+  match parse-json@(k) {
   | Right(Object(kvs)) =>
     pin kvs = kvs;
     pin key = *"key";
-    match lookup(kvs, key) {
+    match lookup@(kvs, key) {
     | Right(value) =>
       match *value {
       | Integer(value) =>
@@ -101,14 +101,14 @@ define _last-object-value-is-used() -> bool {
 }
 
 define main() -> unit {
-  pin k = make-default-noa-kit();
+  pin k = make-default-noa-kit@();
   check(
     k,
     List::[
       example::(
         "JSON Unicode escape accepts four hexadecimal digits without a 0x prefix",
         {
-          match parse-json-string("\\u001e") {
+          match parse-json-string@("\\u001e") {
           | Left(_) =>
             False
           | Right(t) =>
@@ -211,7 +211,7 @@ define main() -> unit {
         derive::(),
         (t: &string) => {
           pin t-without-quote = show-json-string-without-quote(t);
-          match parse-json-string(t-without-quote) {
+          match parse-json-string@(t-without-quote) {
           | Left(_) =>
             False
           | Right(t2) =>
@@ -226,8 +226,8 @@ define main() -> unit {
         json-gen,
         (j: &json) => {
           pin json-txt = show-json(*j);
-          pin k = make-zonk-kit(*json-txt);
-          match parse-json(k) {
+          pin k = make-zonk-kit@(*json-txt);
+          match parse-json@(k) {
           | Right(j) =>
             pin new-json-txt = show-json(j);
             eq-string(json-txt, new-json-txt)
@@ -241,8 +241,8 @@ define main() -> unit {
 }
 
 define zen() -> unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}");
-  match parse-json(k) {
+  pin k = make-zonk-kit@(*" {\"key\" : 1234}");
+  match parse-json@(k) {
   | Right(j) =>
     pin j = show-json(j);
     print("ok: ");

@@ -17,19 +17,19 @@ data json {
 }
 
 define empty-object<a>() -> object(a) {
-  make::(0)
+  make(0)
 }
 
 define make-object<a>() -> object(a) {
-  make::(8)
+  make(8)
 }
 
 define empty-json-array() -> array(json) {
-  make::(8)
+  make(8)
 }
 
 inline append-json-array(xs: array(json), x: json) -> array(json) {
-  push-back(xs, x)
+  push-back(xs, ~x)
 }
 
 define json-array-from-list(xs: list(json)) -> array(json) {
@@ -46,16 +46,16 @@ define json-array-from-list(xs: list(json)) -> array(json) {
 }
 
 define insert<a>(kvs: object(a), key: string, value: a) -> object(a) {
-  push-back(kvs, Pair(key, value))
+  push-back(kvs, ~Pair(key, value))
 }
 
-define lookup<a>(kvs: &object(a), key: &string) ->> ?&a {
+define lookup@<a>(kvs: &object(a), key: &string) -> ?&a {
   let f =
-    define self(index: int) ->> ?&a {
+    define self@(index: int) -> ?&a {
       if lt-int(index, 0) {
         none
       } else {
-        match access(kvs, index) {
+        match access@(kvs, index) {
         | Left(_) =>
           none
         | Right(entry) =>
@@ -63,12 +63,12 @@ define lookup<a>(kvs: &object(a), key: &string) ->> ?&a {
           if eq-string(entry-key, key) {
             Right(value)
           } else {
-            self(sub-int(index, 1))
+            self@(sub-int(index, 1))
           }
         }
       }
     };
-  f(sub-int(length(kvs), 1))
+  f@(sub-int(length(kvs), 1))
 }
 
 define delete(kvs: object(json), key: string) -> object(json) {

@@ -3,7 +3,7 @@ import {
 }
 
 define zen() -> unit {
-  match parse-json-string("hello,\\u12abrld") {
+  match parse-json-string@("hello,\\u12abrld") {
   | Left(JSON-String-Error(e)) =>
     pin e = e;
     print("error: ");

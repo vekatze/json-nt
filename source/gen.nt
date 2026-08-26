@@ -57,30 +57,30 @@ define _object-from-entries(entries: list(pair(string, json))) -> object(json) {
   f(entries, empty-object())
 }
 
-define _generate-json(k: &gen-kit) ->> control(json, json) {
-  scope<json, json>(k, (k) =>> {
+define _generate-json@(k: &gen-kit) -> control(json, json) {
+  scope@<json, json>(k, @(k) => {
     with control-bind {
-      bind tag = choose<json>(k, 7);
+      bind tag = choose@<json>(k, 7);
       match tag {
       | 0 =>
         Control-Success(Null)
       | 1 =>
-        bind b = choose<json>(k, 2);
+        bind b = choose@<json>(k, 2);
         Control-Success(Bool(eq-int(b, 1)))
       | 2 =>
-        bind i = apply(_int-gen, k);
+        bind i = apply@(_int-gen, k);
         Control-Success(Integer(i))
       | 3 =>
-        bind x = apply(_float-gen, k);
+        bind x = apply@(_float-gen, k);
         Control-Success(Float(x))
       | 4 =>
-        bind t = apply(_string-gen(), k);
+        bind t = apply@(_string-gen(), k);
         Control-Success(Text(t))
       | 5 =>
-        bind xs = apply(gen-list(json-gen), k);
+        bind xs = apply@(gen-list(json-gen), k);
         Control-Success(Array(json-array-from-list(xs)))
       | _ =>
-        bind entries = apply(gen-list(_object-entry-gen()), k);
+        bind entries = apply@(gen-list(_object-entry-gen()), k);
         Control-Success(Object(_object-from-entries(entries)))
       }
     }
@@ -89,9 +89,9 @@ define _generate-json(k: &gen-kit) ->> control(json, json) {
 
 constant json-gen: gen(json) {
   Gen(
-    <r>(k: &gen-kit) =>> {
-      scope<r, json>(k, (k) =>> {
-        _generate-json(k)
+    @<r>(k: &gen-kit) => {
+      scope@<r, json>(k, @(k) => {
+        _generate-json@(k)
       })
     },
   )
