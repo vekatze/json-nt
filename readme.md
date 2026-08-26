@@ -5,7 +5,7 @@ A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming langua
 ## Installation
 
 ```sh
-neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-51.tar.zst
+neut get json https://github.com/vekatze/json-nt/raw/main/archive/0.2.1.tar.zst
 ```
 
 ## Types
@@ -13,7 +13,7 @@ neut get json https://github.com/vekatze/json-nt/raw/main/archive/0-1-51.tar.zst
 ```neut
 // Represents a JSON object.
 alias object(a) {
-  dictionary(string, a)
+  array(pair(string, a))
 }
 
 // Represents a JSON value.
@@ -24,31 +24,52 @@ data json {
 | Float(float)
 | Text(string)
 | Object(object(json))
-| Array(list(json))
+| Array(array(json))
 }
 
+// Creates an empty JSON object.
+define empty-object<a>() -> object(a)
+
+// Creates a JSON object with an initial capacity.
+define make-object<a>() -> object(a)
+
+// Creates an empty JSON array.
+define empty-json-array() -> array(json)
+
+// Appends a value to a JSON array.
+inline append-json-array(xs: array(json), x: json) -> array(json)
+
+// Creates a JSON array from a list.
+define json-array-from-list(xs: list(json)) -> array(json)
+
 // Parses a string into a JSON value.
-define parse-json<c>(k: &zonk-kit(c)) -> either(parse-error, json)
+define parse-json(k: &zonk-kit) ->> either(parse-error, json)
 
 // Converts a JSON value into a string.
 define show-json(j: json) -> string
 
-// Inserts or replaces a key in an object.
+// Adds a key-value pair to an object.
 define insert(kvs: object(json), key: string, value: json) -> object(json)
 
 // Looks up a key in an object.
-define lookup(k: &ord(string), kvs: &object(json), key: &string) ->> ?&json
+define lookup<a>(kvs: &object(a), key: &string) ->> ?&a
 
 // Deletes a key from an object.
-define delete(k: &ord(string), kvs: object(json), key: string) -> object(json)
+define delete(kvs: object(json), key: string) -> object(json)
 ```
 
 ## Example
 
 ```neut
-// see source/_test.nt
+import {
+  core::string.io {print-line},
+  zonk::parse {make-zonk-kit},
+  this::parse {parse-json},
+  this::show {show-json},
+}
+
 define zen() -> unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}", Unit);
+  pin k = make-zonk-kit(*" {\"key\" : 1234}");
   match parse-json(k) {
   | Right(j) =>
     pin j = show-json(j);
