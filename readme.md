@@ -5,7 +5,7 @@ A JSON parser for the [Neut](https://vekatze.github.io/neut/) programming langua
 ## Installation
 
 ```sh
-neut get json https://github.com/vekatze/json-nt/raw/main/archive/0.2.1.tar.zst
+neut get json https://github.com/vekatze/json-nt/raw/main/archive/0.2.2.tar.zst
 ```
 
 ## Types
@@ -43,16 +43,16 @@ inline append-json-array(xs: array(json), x: json) -> array(json)
 define json-array-from-list(xs: list(json)) -> array(json)
 
 // Parses a string into a JSON value.
-define parse-json(k: &zonk-kit) ->> either(parse-error, json)
+define parse-json@(k: &zonk-kit) -> either(parse-error, json)
 
 // Converts a JSON value into a string.
 define show-json(j: json) -> string
 
 // Adds a key-value pair to an object.
-define insert(kvs: object(json), key: string, value: json) -> object(json)
+define insert<a>(kvs: object(a), key: string, value: a) -> object(a)
 
 // Looks up a key in an object.
-define lookup<a>(kvs: &object(a), key: &string) ->> ?&a
+define lookup@<a>(kvs: &object(a), key: &string) -> ?&a
 
 // Deletes a key from an object.
 define delete(kvs: object(json), key: string) -> object(json)
@@ -69,8 +69,8 @@ import {
 }
 
 define zen() -> unit {
-  pin k = make-zonk-kit(*" {\"key\" : 1234}");
-  match parse-json(k) {
+  pin k = make-zonk-kit@(*" {\"key\" : 1234}");
+  match parse-json@(k) {
   | Right(j) =>
     pin j = show-json(j);
     print("ok: ");
