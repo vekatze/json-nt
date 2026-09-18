@@ -30,7 +30,7 @@ define hex-digit-value(r: rune) -> int {
   }
 }
 
-define _parse-unicode-escape@(t: &string, index: int, len: int) -> either(error, pair(rune, int)) {
+define _parse-unicode-escape(t: &string, index: int, len: int) ->> either(error, pair(rune, int)) {
   if gt-int(add-int(index, 4), len) {
     Left(JSON-String-Error(*"Expected a 4-digit Unicode codepoint"))
   } else {
@@ -55,7 +55,7 @@ define _parse-unicode-escape@(t: &string, index: int, len: int) -> either(error,
                 mul-int(hex-digit-value(r1), 4096),
                 add-int(mul-int(hex-digit-value(r2), 256), add-int(mul-int(hex-digit-value(r3), 16), hex-digit-value(r4))),
               );
-            match core::rune::from-int@(v) {
+            match core::rune::from-scalar-value@(v) {
             | Left(_) =>
               Left(JSON-String-Error(format("The value `{}` is outside the Unicode codespace", List::[show-int(v)])))
             | Right(r) =>
@@ -68,7 +68,7 @@ define _parse-unicode-escape@(t: &string, index: int, len: int) -> either(error,
   }
 }
 
-define _append-escape@(b: &string-builder, t: &string, index: int, len: int) -> either(error, int) {
+define _append-escape(b: &string-builder, t: &string, index: int, len: int) ->> either(error, int) {
   if ge-int(index, len) {
     append-rune-UTF8(b, `\\`);
     Right(index)
@@ -121,7 +121,7 @@ define _has-escape(t: &string, index: int, len: int) -> bool {
   }
 }
 
-define _parse-json-string-into@(b: &string-builder, t: &string, index: int, len: int) -> either(error, unit) {
+define _parse-json-string-into(b: &string-builder, t: &string, index: int, len: int) ->> either(error, unit) {
   if ge-int(index, len) {
     Right(Unit)
   } else {
@@ -136,7 +136,7 @@ define _parse-json-string-into@(b: &string-builder, t: &string, index: int, len:
   }
 }
 
-define parse-json-string@(t: &string) -> either(error, string) {
+define parse-json-string(t: &string) ->> either(error, string) {
   let len = byte-length(t);
   if _has-escape(t, 0, len) {
     let b = make-string-builder(len);

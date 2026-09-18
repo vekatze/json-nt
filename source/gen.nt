@@ -57,8 +57,8 @@ define _object-from-entries(entries: list(pair(string, json))) -> object(json) {
   f(entries, empty-object())
 }
 
-define _generate-json@(k: &gen-kit) -> control(json, json) {
-  scope@<json, json>(k, @(k) => {
+define _generate-json(k: &gen-kit) ->> control(json, json) {
+  scope@<json, json>(k, (k) =>> {
     with control-bind {
       bind tag = choose@<json>(k, 7);
       match tag {
@@ -89,8 +89,8 @@ define _generate-json@(k: &gen-kit) -> control(json, json) {
 
 constant json-gen: gen(json) {
   Gen(
-    @<r>(k: &gen-kit) => {
-      scope@<r, json>(k, @(k) => {
+    <r>(k: &gen-kit) =>> {
+      scope@<r, json>(k, (k) =>> {
         _generate-json@(k)
       })
     },

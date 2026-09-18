@@ -49,9 +49,9 @@ define insert<a>(kvs: object(a), key: string, value: a) -> object(a) {
   push-back(kvs, ~Pair(key, value))
 }
 
-define lookup@<a>(kvs: &object(a), key: &string) -> ?&a {
+define lookup<a>(kvs: &object(a), key: &string) ->> ?&a {
   let f =
-    define self@(index: int) -> ?&a {
+    define self(index: int) ->> ?&a {
       if lt-int(index, 0) {
         none
       } else {
