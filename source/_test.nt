@@ -1,4 +1,5 @@
 import {
+  core::string.builder {append-string, extract, make-string-builder},
   noa::gen.generic {derive},
   noa::suite {make-default-noa-kit},
   noa::suite.spec {check, example, property},
@@ -64,6 +65,23 @@ define _rejects-json-string(source: &string) -> bool {
   | Right(_) =>
     False
   }
+}
+
+define _many-lines(count: int) -> string {
+  let b = make-string-builder(mul-int(count, 2));
+  let _ on b = {
+    let f =
+      define loop(i: int) -> unit {
+        if ge-int(i, count) {
+          Unit
+        } else {
+          append-string(b, "a\n");
+          loop(add-int(i, 1))
+        }
+      };
+    f(0)
+  };
+  extract(b)
 }
 
 define _object-with-two-entries() -> object(json) {
@@ -147,6 +165,14 @@ define main() -> unit {
           "{\"a\\u0062\":\"line\\n\\t\\\"\\\\\\/\"}",
           Object(insert(empty-object(), *"ab", Text(*"line\n\t\"\\/"))),
         ),
+      ),
+      example::(
+        "a long string of many escapes is shown and parsed again",
+        {
+          pin t = _many-lines(1000000);
+          pin source = show-json(Text(*t));
+          _parses-as(source, Text(*t))
+        },
       ),
       example::(
         "array trailing comma is rejected",

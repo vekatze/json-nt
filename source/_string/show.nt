@@ -1,7 +1,7 @@
 import {
-  core::list {append},
   core::rune,
-  core::string {byte-length, join},
+  core::string {byte-length},
+  core::string.builder {append-string, extract, make-string-builder, string-builder},
   core::string.unsafe {get-rune-unchecked, slice-N},
 }
 
@@ -42,60 +42,76 @@ define _hex-digit(x: int) -> &string {
   }
 }
 
-define _show-hex-byte(x: int) -> string {
-  join(List::[
-    *_hex-digit(div-int(x, 16)),
-    *_hex-digit(rem-int(x, 16)),
-  ])
+define _needs-escape(r: rune) -> bool {
+  if le-rune(r, `\u{1F}`) {
+    True
+  } else {
+    or::(eq-rune(r, `\u{22}`), eq-rune(r, `\u{5C}`))
+  }
 }
 
-define _quote-string(haystack: &string) -> list(string) {
-  let len = byte-length(haystack);
+define _append-escape(b: &string-builder, r: rune) -> unit {
+  match r {
+  | `\u{8}` =>
+    append-string(b, "\\b")
+  | `\u{9}` =>
+    append-string(b, "\\t")
+  | `\u{A}` =>
+    append-string(b, "\\n")
+  | `\u{C}` =>
+    append-string(b, "\\f")
+  | `\u{D}` =>
+    append-string(b, "\\r")
+  | `\u{22}` =>
+    append-string(b, "\\\"")
+  | `\u{5C}` =>
+    append-string(b, "\\\\")
+  | _ =>
+    let code = core::rune::to-int(r);
+    append-string(b, "\\u00");
+    append-string(b, _hex-digit(div-int(code, 16)));
+    append-string(b, _hex-digit(rem-int(code, 16)))
+  }
+}
+
+define _append-run(b: &string-builder, t: &string, start: int, size: int) -> unit {
+  if gt-int(size, 0) {
+    pin run = slice-N(t, start, size);
+    append-string(b, run)
+  } else {
+    Unit
+  }
+}
+
+define append-escaped(b: &string-builder, t: &string) -> unit {
+  let len = byte-length(t);
   let f =
-    define loop(pivot: int, cursor: int) -> list(string) {
+    define loop(pivot: int, cursor: int) -> unit {
       let index = add-int(pivot, cursor);
       if ge-int(index, len) {
-        List::[slice-N(haystack, pivot, cursor)]
+        _append-run(b, t, pivot, cursor)
       } else {
-        let f =
-          (escaped-string: string) => {
-            let piece = slice-N(haystack, pivot, cursor);
-            let rest = loop(add-int(index, 1), 0);
-            Cons(piece, Cons(escaped-string, rest))
-          };
-        let r = get-rune-unchecked(haystack, index);
-        match r {
-        | `\u{8}` =>
-          f(*"\\b")
-        | `\u{9}` =>
-          f(*"\\t")
-        | `\u{A}` =>
-          f(*"\\n")
-        | `\u{C}` =>
-          f(*"\\f")
-        | `\u{D}` =>
-          f(*"\\r")
-        | `\u{22}` =>
-          f(*"\\\"")
-        | `\u{5C}` =>
-          f(*"\\\\")
-        | _ =>
-          if le-rune(r, `\u{1F}`) {
-            f(join(List::[*"\\u00", _show-hex-byte(core::rune::to-int(r))]))
-          } else {
-            loop(pivot, add-int(cursor, core::rune::size(r)))
-          }
+        let r = get-rune-unchecked(t, index);
+        if _needs-escape(r) {
+          _append-run(b, t, pivot, cursor);
+          _append-escape(b, r);
+          loop(add-int(index, 1), 0)
+        } else {
+          loop(pivot, add-int(cursor, core::rune::size(r)))
         }
       }
     };
   f(0, 0)
 }
 
-define show-json-string(t: string) -> string {
-  pin t = t;
-  join(Cons(*"\"", append(_quote-string(t), List::[*"\""])))
+define append-json-string(b: &string-builder, t: &string) -> unit {
+  append-string(b, "\"");
+  append-escaped(b, t);
+  append-string(b, "\"")
 }
 
 define show-json-string-without-quote(t: &string) -> string {
-  join(_quote-string(t))
+  let b = make-string-builder(byte-length(t));
+  let _ on b = append-escaped(b, t);
+  extract(b)
 }

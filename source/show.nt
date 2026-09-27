@@ -1,15 +1,64 @@
 import {
+  core::array {for-N},
   core::float.show {show-float},
   core::int.show {show-int},
-  core::list {append, for-each, intercalate},
   core::list.show,
-  core::string {join},
-  this::_string.show {show-json-string},
-  this::data {Array, Bool, Float, Integer, Null, Object, Text, json, object},
+  core::string.builder {append-string, extract, make-string-builder, string-builder},
+  this::_string.show {append-json-string},
+  this::data {Array, Bool, Float, Integer, Null, Object, Text, json},
 }
 
-nominal {
-  define show-json(j: json) -> string,
+define _append-separator(b: &string-builder, index: int) -> unit {
+  if gt-int(index, 0) {
+    append-string(b, ", ")
+  } else {
+    Unit
+  }
+}
+
+define _append-json(b: &string-builder, j: &json) -> unit {
+  case j {
+  | Null =>
+    append-string(b, "null")
+  | Bool(x) =>
+    if *x {
+      append-string(b, "true")
+    } else {
+      append-string(b, "false")
+    }
+  | Integer(i) =>
+    pin shown = show-int(*i);
+    append-string(b, shown)
+  | Float(x) =>
+    pin shown = show-float(*x);
+    append-string(b, shown)
+  | Text(t) =>
+    append-json-string(b, t)
+  | Object(kvs) =>
+    append-string(b, "{");
+    for-N(kvs, (kv, index) => {
+      tie Pair(k, v) = kv;
+      _append-separator(b, index);
+      append-json-string(b, k);
+      append-string(b, ": ");
+      _append-json(b, v)
+    });
+    append-string(b, "}")
+  | Array(xs) =>
+    append-string(b, "[");
+    for-N(xs, (x, index) => {
+      _append-separator(b, index);
+      _append-json(b, x)
+    });
+    append-string(b, "]")
+  }
+}
+
+define show-json(j: json) -> string {
+  let b = make-string-builder(64);
+  let _ on b, j = _append-json(b, j);
+  let _ = j;
+  extract(b)
 }
 
 constant as-show: show(json) {
@@ -24,42 +73,4 @@ constant as-show: show(json) {
 
 constant list-json: show(list(json)) {
   core::list.show::as-show(as-show)
-}
-
-define _show-object(kvs: object(json)) -> string {
-  let kvs = core::array::to-list(kvs);
-  let kvs =
-    for-each(kvs, (kv) => {
-      let Pair(k, v) = kv;
-      let k = show-json-string(k);
-      let v = show-json(v);
-      join(List::[k, *": ", v])
-    });
-  join(Cons(*"{", append(intercalate(kvs, *", "), List::[*"}"])))
-}
-
-define show-json(j: json) -> string {
-  match j {
-  | Null =>
-    *"null"
-  | Bool(b) =>
-    if b {
-      *"true"
-    } else {
-      *"false"
-    }
-  | Integer(i) =>
-    show-int(i)
-  | Float(x) =>
-    show-float(x)
-  | Text(x) =>
-    show-json-string(x)
-  | Object(kvs) =>
-    _show-object(kvs)
-  | Array(xs) =>
-    let Show{render} = list-json;
-    let xs = core::array::to-list(xs);
-    pin xs = xs;
-    render(xs)
-  }
 }
