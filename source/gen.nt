@@ -44,17 +44,16 @@ define _object-entry-gen() -> gen(pair(string, json)) {
 }
 
 define _object-from-entries(entries: list(pair(string, json))) -> object(json) {
-  let f =
-    define loop(entries: list(pair(string, json)), acc: object(json)) -> object(json) {
-      match entries {
-      | Nil =>
-        acc
-      | Cons(entry, rest) =>
-        let Pair(key, value) = entry;
-        loop(rest, insert(acc, key, value))
-      }
-    };
-  f(entries, empty-object())
+  define go(entries: list(pair(string, json)), acc: object(json)) -> object(json) {
+    match entries {
+    | Nil =>
+      acc
+    | Cons(entry, rest) =>
+      let Pair(key, value) = entry;
+      go(rest, insert(acc, key, value))
+    }
+  };
+  go(entries, empty-object())
 }
 
 define _generate-json(k: &gen-kit) ->> control(json, json) {

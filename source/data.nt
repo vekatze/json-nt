@@ -33,16 +33,15 @@ inline append-json-array(xs: array(json), x: json) -> array(json) {
 }
 
 define json-array-from-list(xs: list(json)) -> array(json) {
-  let f =
-    define loop(ys: list(json), acc: array(json)) -> array(json) {
-      match ys {
-      | Nil =>
-        acc
-      | Cons(y, ys) =>
-        loop(ys, append-json-array(acc, y))
-      }
-    };
-  f(xs, empty-json-array())
+  define go(ys: list(json), acc: array(json)) -> array(json) {
+    match ys {
+    | Nil =>
+      acc
+    | Cons(y, ys) =>
+      go(ys, append-json-array(acc, y))
+    }
+  };
+  go(xs, empty-json-array())
 }
 
 define insert<a>(kvs: object(a), key: string, value: a) -> object(a) {
@@ -50,43 +49,41 @@ define insert<a>(kvs: object(a), key: string, value: a) -> object(a) {
 }
 
 define lookup<a>(kvs: &object(a), key: &string) ->> ?&a {
-  let f =
-    define self(index: int) ->> ?&a {
-      if lt-int(index, 0) {
+  define go(index: int) ->> ?&a {
+    if lt-int(index, 0) {
+      none
+    } else {
+      match access@(kvs, index) {
+      | Left(_) =>
         none
-      } else {
-        match access@(kvs, index) {
-        | Left(_) =>
-          none
-        | Right(entry) =>
-          tie Pair(entry-key, value) = entry;
-          if eq-string(entry-key, key) {
-            Right(value)
-          } else {
-            self@(sub-int(index, 1))
-          }
+      | Right(entry) =>
+        tie Pair(entry-key, value) = entry;
+        if eq-string(entry-key, key) {
+          Right(value)
+        } else {
+          go@(sub-int(index, 1))
         }
       }
-    };
-  f@(sub-int(length(kvs), 1))
+    }
+  };
+  go@(sub-int(length(kvs), 1))
 }
 
 define delete(kvs: object(json), key: string) -> object(json) {
   pin key = key;
-  let f =
-    define loop(entries: list(pair(string, json)), acc: object(json)) -> object(json) {
-      match entries {
-      | Nil =>
-        acc
-      | Cons(entry, rest) =>
-        let Pair(entry-key, value) = entry;
-        pin entry-key = entry-key;
-        if eq-string(entry-key, key) {
-          loop(rest, acc)
-        } else {
-          loop(rest, insert(acc, *entry-key, value))
-        }
+  define go(entries: list(pair(string, json)), acc: object(json)) -> object(json) {
+    match entries {
+    | Nil =>
+      acc
+    | Cons(entry, rest) =>
+      let Pair(entry-key, value) = entry;
+      pin entry-key = entry-key;
+      if eq-string(entry-key, key) {
+        go(rest, acc)
+      } else {
+        go(rest, insert(acc, *entry-key, value))
       }
-    };
-  f(to-list(kvs), empty-object())
+    }
+  };
+  go(to-list(kvs), empty-object())
 }

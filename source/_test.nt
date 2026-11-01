@@ -70,16 +70,15 @@ define _rejects-json-string(source: &string) -> bool {
 define _many-lines(count: int) -> string {
   let b = make-string-builder(mul-int(count, 2));
   let _ on b = {
-    let f =
-      define loop(i: int) -> unit {
-        if ge-int(i, count) {
-          Unit
-        } else {
-          append-string(b, "a\n");
-          loop(add-int(i, 1))
-        }
-      };
-    f(0)
+    define go(i: int) -> unit {
+      if ge-int(i, count) {
+        Unit
+      } else {
+        append-string(b, "a\n");
+        go(add-int(i, 1))
+      }
+    };
+    go(0)
   };
   extract(b)
 }
